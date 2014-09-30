@@ -34,15 +34,14 @@ class Comparison(object):
 #     def __repr__(self):
 #         return "Integer:" + str(self.value)
 
+###
+
 class LeafNode(object):
     def __init__(self, parent):
         if parent:
             parent.children.append(self)
 
         self.parent = parent
-
-    # def __repr__(self):
-    #     return repr(self.value)
 
 class Relation(LeafNode):
     def __init__(self, parent, name):
@@ -52,18 +51,14 @@ class Relation(LeafNode):
     def __repr__(self):
         return "Relation:" + str(self.name)
 
+###
+
 class TreeNode(object):
     def __init__(self, parent):
         if parent:
             parent.children.append(self)
         self.parent = parent
         self.children = []
-
-    # def __repr__(self):
-    #     s = super(TreeNode, self).__repr__()
-    #     cs = [repr(c) for c in self.children]
-
-    #     return s + '\n' + ', '.join(cs)
 
 class Projection(TreeNode):
     def __init__(self, parent, fields):
