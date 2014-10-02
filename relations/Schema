@@ -1,0 +1,1 @@
+Students(stu_id:INT,name:STR,gender:STR,degree:STR,major:STR)
