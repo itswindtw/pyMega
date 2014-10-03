@@ -40,15 +40,24 @@ def parse_select(stmt):
     if isinstance(tables, sql.Identifier):
         node = Relation(node, str(tables))
     elif isinstance(tables, sql.IdentifierList):
-        node = CrossJoin(node)
-
-        for f in tables.get_identifiers():
-            Relation(node, f)
+        node = parse_relations(node, tables.get_identifiers())
 
     while node.parent:
         node = node.parent
 
     return node
+
+def parse_relations(parent, ids):
+    def combine(x, y):
+        node = CrossJoin(None)
+        x.parent = node
+        Relation(node, y)
+        return node
+
+    head = Relation(None, next(ids))
+    join_tree = reduce(combine, list(ids), head)
+    join_tree.parent = parent
+    return join_tree
 
 def parse_where_clause(clause):
     tokens = sql.TokenList(clause.tokens)
