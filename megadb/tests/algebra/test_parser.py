@@ -3,6 +3,8 @@ from megadb.algebra.parser import parse_sql, print_parse_tree
 
 class ParserTestCase(unittest.TestCase):
     def test_parse_sql(self):
+        print
+
         tree = parse_sql("SELECT title, a FROM StarsIn WHERE starName = name AND movieYear = 2008")
         print_parse_tree(tree)
 

@@ -1,3 +1,5 @@
+from megadb.tree import LeafNode, TreeNode
+
 class Comparison(object):
     def __init__(self, x, y, comp):
         self.x = x
@@ -9,13 +11,6 @@ class Comparison(object):
 
 ###
 
-class LeafNode(object):
-    def __init__(self, parent):
-        if parent:
-            parent.children.append(self)
-
-        self.parent = parent
-
 class Relation(LeafNode):
     def __init__(self, parent, name):
         super(Relation, self).__init__(parent)
@@ -25,13 +20,6 @@ class Relation(LeafNode):
         return "Relation:" + str(self.name)
 
 ###
-
-class TreeNode(object):
-    def __init__(self, parent):
-        if parent:
-            parent.children.append(self)
-        self.parent = parent
-        self.children = []
 
 class Projection(TreeNode):
     def __init__(self, parent, fields):
