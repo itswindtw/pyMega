@@ -50,7 +50,7 @@ class Plan(object):
 
     def __enter__(self):
         self.open()
-        return self.iterate()
+        return self
 
     def __exit__(self, type, value, traceback):
         self.close()
@@ -64,20 +64,23 @@ class Relation(LeafNode, Plan):
         self.path = os.path.join(settings.RELATIONS_PATH, name)
 
     def open(self):
-        self._file = open(self.path, 'r')
+        # self._file = open(self.path, 'r')
+        pass
 
     def iterate(self):
-        for line in self._file:
-            tuple = collections.OrderedDict()
+        with open(self.path, 'r') as relation_file:
+            for line in relation_file:
+                tuple = collections.OrderedDict()
 
-            values = line.rstrip().split('#')
-            for (field_name, field_type), value in zip(self.fields, values):
-                tuple[field_name] = field_type(value)
+                values = line.rstrip().split('#')
+                for (field_name, field_type), value in zip(self.fields, values):
+                    tuple[field_name] = field_type(value)
 
-            yield tuple
+                yield tuple
 
     def close(self):
-        self._file.close()
+        # self._file.close()
+        pass
 
 class Projection(TreeNode, Plan):
     def __init__(self, parent, fields):
@@ -137,7 +140,6 @@ class CrossJoin(TreeNode, Plan):
 
     def open(self):
         assert(len(self.children) == 2)
-
         self.children[0].open()
 
     def iterate(self):
