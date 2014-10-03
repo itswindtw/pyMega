@@ -1,1 +1,2 @@
-Students(stu_id:INT,name:STR,gender:STR,degree:STR,major:STR)
+Alpha(a1:INT,a2:STR)
+Beta(b1:INT,b2:STR)

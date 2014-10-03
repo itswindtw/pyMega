@@ -17,17 +17,17 @@ class PlanTestCase(unittest.TestCase):
         print "Schema is ready..."
 
     def test_relation(self):
-        students = Relation(None, 'Students', self.schema.relations['Students'])
+        alpha = Relation(None, 'Alpha', self.schema.relations['Alpha'])
 
-        with students:
-            it = students.iterate()
+        with alpha:
+            it = alpha.iterate()
             for s in it:
                 print s
 
     def test_projection(self):
-        fields = [name for (name, type) in self.schema.relations['Students'][0:2]]
+        fields = [name for (name, type) in self.schema.relations['Alpha'][0:2]]
         projection = Projection(None, fields)
-        students = Relation(projection, 'Students', self.schema.relations['Students'])
+        alpha = Relation(projection, 'Alpha', self.schema.relations['Alpha'])
 
         with projection:
             it = projection.iterate()
@@ -35,33 +35,43 @@ class PlanTestCase(unittest.TestCase):
                 print t
 
     def test_selection_one_cond(self):
-        selection = Selection(None, [Comparison('name', 'Xue Song', '=')])
-        students = Relation(selection, 'Students', self.schema.relations['Students'])
+        selection = Selection(None, [Comparison('a1', '3', '=')])
+        alpha = Relation(selection, 'Alpha', self.schema.relations['Alpha'])
 
-        with students:
+        with selection:
             it = selection.iterate()
             for t in it:
                 print t
 
     def test_selection_two_cond(self):
-        selection = Selection(None, [Comparison('gender', 'M', '='), Comparison('name', 'Xue Song', '=')])
-        students = Relation(selection, 'Students', self.schema.relations['Students'])
+        selection = Selection(None, [Comparison('a1', '3', '='), Comparison('a2', 'cc', '=')])
+        alpha = Relation(selection, 'Alpha', self.schema.relations['Alpha'])
 
-        with students:
+        with selection:
             it = selection.iterate()
             for t in it:
                 print t
 
     def test_selection_then_projection(self):
-        fields = [name for (name, type) in self.schema.relations['Students'][0:2]]
+        fields = [name for (name, type) in self.schema.relations['Alpha'][1:]]
         projection = Projection(None, fields)
-        selection = Selection(projection, [Comparison('name', 'Xue Song', '=')])
-        students = Relation(selection, 'Students', self.schema.relations['Students'])
+        selection = Selection(projection, [Comparison('a1', '3', '=')])
+        alpha = Relation(selection, 'Alpha', self.schema.relations['Alpha'])
 
         with projection:
             it = projection.iterate()
             for t in it:
                 print t
 
+    def test_cross_join_then_selection(self):
+        selection = Selection(None, [Comparison('a1', '3', '=')])
+        cross_join = CrossJoin(selection)
+        alpha = Relation(cross_join, 'Alpha', self.schema.relations['Alpha'])
+        beta = Relation(cross_join, 'Beta', self.schema.relations['Beta'])
+
+        with selection:
+            it = selection.iterate()
+            for t in it:
+                print t
 
 
