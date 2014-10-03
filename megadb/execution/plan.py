@@ -145,7 +145,7 @@ class CrossJoin(TreeNode, Plan):
     def iterate(self):
         def merge(p, q):
             # TODO: resolve conflicts on same field names
-            collections.OrderedDict(p.items() + q.items())
+            return collections.OrderedDict(p.items() + q.items())
 
         for tuple_l in self.children[0].iterate():
             with self.children[1]:
