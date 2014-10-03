@@ -26,10 +26,10 @@ def parse_select(stmt):
     # Tree Construction
     node = None
 
-    if isinstance(fields, sql.Identifier):
-        node = Projection(node, [str(fields)])
-    elif isinstance(fields, sql.IdentifierList):
+    if isinstance(fields, sql.IdentifierList):
         node = Projection(node, [str(f) for f in fields.get_identifiers()])
+    else:
+        node = Projection(node, [str(fields)])
 
     if where_clause is not None:
         conds = parse_where_clause(where_clause)
