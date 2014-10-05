@@ -16,10 +16,16 @@ class Field(object):
         else:
             return 'Field(' + self.name + ')'
 
+    def __eq__(self, other):
+        if self.namespace is None or other.namespace is None:
+            return self.name == other.name
+
+        return self.name == other.name and self.namespace == other.namespace
+
     @classmethod
     def from_components(cls, name, namespace=None):
         if namespace:
-            field_fullname = '.'.join(namespace, name)
+            field_fullname = '.'.join([namespace, name])
         else:
             field_fullname = name
         return cls(field_fullname)

@@ -4,6 +4,7 @@ import operator
 
 import megadb.settings as settings
 from megadb.tree import LeafNode, TreeNode
+from megadb.algebra.plan import Field
 
 class Schema(object):
     def __init__(self):
@@ -97,15 +98,25 @@ class Projection(TreeNode, Plan):
             if len(self.fields) == 0:
                 yield tuple.items()
             else:
+                # FIXME: ambiguous?
                 yield [(k, v) for (k, v) in tuple.iteritems() if k in self.fields]
 
     def close(self):
         self.children[0].close()
 
 def eval_conds(tuple, conds):
+    def extract_field(tuple, field):
+        field_value = tuple.get(field)
+
+        if field_value is not None:
+            return field_value
+
+        for (k, v) in tuple.iteritems():
+            if k.name == field.name:
+                return v
+
     def eval_cond(tuple, cond):
-        # TODO: namespace
-        lopnd = tuple[cond.x]
+        lopnd = extract_field(tuple, cond.x)
         ropnd = type(lopnd)(cond.y)
 
         # TODO: support more operators

@@ -69,6 +69,7 @@ def parse_where_clause(clause):
         if cond.is_group():
             conds.append(parse_conditions(cond))
         else:
+            # FIXME: unnecessary now?
             x = tokens.token_prev(tokens.token_index(cond))
             y = tokens.token_next(tokens.token_index(cond))
             conds.append(Comparison(x, y, cond))

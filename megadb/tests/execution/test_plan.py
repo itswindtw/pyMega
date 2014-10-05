@@ -1,6 +1,6 @@
 import unittest
 from megadb.execution.plan import *
-from megadb.algebra.plan import Comparison
+from megadb.algebra.plan import Comparison, Field
 
 class SchemaTestCase(unittest.TestCase):
     def test_load(self):
@@ -25,7 +25,7 @@ class PlanTestCase(unittest.TestCase):
                 print s
 
     def test_projection(self):
-        fields = [name for (name, type) in self.schema.relations['Alpha'][0:2]]
+        fields = [Field(name) for (name, type) in self.schema.relations['Alpha'][0:1]]
         projection = Projection(None, fields)
         alpha = Relation(projection, 'Alpha', self.schema.relations['Alpha'])
 
@@ -35,7 +35,7 @@ class PlanTestCase(unittest.TestCase):
                 print t
 
     def test_selection_one_cond(self):
-        selection = Selection(None, [Comparison('a1', '3', '=')])
+        selection = Selection(None, [Comparison(Field('a1'), '3', '=')])
         alpha = Relation(selection, 'Alpha', self.schema.relations['Alpha'])
 
         with selection:
@@ -44,7 +44,7 @@ class PlanTestCase(unittest.TestCase):
                 print t
 
     def test_selection_two_cond(self):
-        selection = Selection(None, [Comparison('a1', '3', '='), Comparison('a2', 'cc', '=')])
+        selection = Selection(None, [Comparison(Field('a1'), '3', '='), Comparison(Field('a2'), 'cc', '=')])
         alpha = Relation(selection, 'Alpha', self.schema.relations['Alpha'])
 
         with selection:
@@ -53,9 +53,9 @@ class PlanTestCase(unittest.TestCase):
                 print t
 
     def test_selection_then_projection(self):
-        fields = [name for (name, type) in self.schema.relations['Alpha'][1:]]
+        fields = [Field(name) for (name, type) in self.schema.relations['Alpha'][1:]]
         projection = Projection(None, fields)
-        selection = Selection(projection, [Comparison('a1', '3', '=')])
+        selection = Selection(projection, [Comparison(Field('a1'), '3', '=')])
         alpha = Relation(selection, 'Alpha', self.schema.relations['Alpha'])
 
         with projection:
@@ -64,7 +64,7 @@ class PlanTestCase(unittest.TestCase):
                 print t
 
     def test_cross_join_then_selection(self):
-        selection = Selection(None, [Comparison('a1', '3', '=')])
+        selection = Selection(None, [Comparison(Field('a1'), '3', '=')])
         cross_join = CrossJoin(selection)
         alpha = Relation(cross_join, 'Alpha', self.schema.relations['Alpha'])
         beta = Relation(cross_join, 'Beta', self.schema.relations['Beta'])
