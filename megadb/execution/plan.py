@@ -74,7 +74,8 @@ class Relation(LeafNode, Plan):
 
                 values = line.rstrip().split('#')
                 for (field_name, field_type), value in zip(self.fields, values):
-                    tuple[field_name] = field_type(value)
+                    field = Field.from_components(field_name, self.name)
+                    tuple[field] = field_type(value)
 
                 yield tuple
 

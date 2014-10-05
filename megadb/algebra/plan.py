@@ -1,15 +1,28 @@
 from megadb.tree import LeafNode, TreeNode
 
 class Field(object):
-    def __init__(self, name, namespace=None):
-        self.name = name
-        self.namespace = namespace
+    def __init__(self, full_name):
+        full_name = full_name.split('.')
+        if len(full_name) > 1:
+            self.namespace = full_name[0]
+            self.name = full_name[1]
+        else:
+            self.namespace = None
+            self.name = full_name[0]
 
     def __repr__(self):
         if self.namespace:
             return 'Field(' + self.namespace + '.' + self.name + ')'
         else:
             return 'Field(' + self.name + ')'
+
+    @classmethod
+    def from_components(cls, name, namespace=None):
+        if namespace:
+            field_fullname = '.'.join(namespace, name)
+        else:
+            field_fullname = name
+        return cls(field_fullname)
 
 class Comparison(object):
     def __init__(self, x, y, comp):

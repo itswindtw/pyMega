@@ -84,11 +84,7 @@ def parse_conditions(cond):
     tokens = sql.TokenList(cond.tokens)
 
     field_token = tokens.token_first()
-    field_fullname = str(field_token).split('.')
-    if len(field_fullname) > 1:
-        x = Field(field_fullname[0], field_fullname[1])
-    else:
-        x = Field(field_fullname[0])
+    x = Field(str(field_token))
     comp = tokens.token_next(tokens.token_index(field_token))
     y = tokens.token_next(tokens.token_index(comp))
 
