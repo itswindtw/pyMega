@@ -27,9 +27,9 @@ def parse_select(stmt):
     node = None
 
     if isinstance(fields, sql.Identifier):
-        node = Projection(node, [str(fields)])
+        node = Projection(node, [Field(str(fields))])
     elif isinstance(fields, sql.IdentifierList):
-        node = Projection(node, [str(f) for f in fields.get_identifiers()])
+        node = Projection(node, [Field(str(f)) for f in fields.get_identifiers()])
     else:
         node = Projection(node, []) # represent '*'
 
@@ -69,7 +69,6 @@ def parse_where_clause(clause):
         if cond.is_group():
             conds.append(parse_conditions(cond))
         else:
-            print repr(cond)
             x = tokens.token_prev(tokens.token_index(cond))
             y = tokens.token_next(tokens.token_index(cond))
             conds.append(Comparison(x, y, cond))
