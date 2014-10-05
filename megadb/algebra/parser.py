@@ -79,16 +79,25 @@ def parse_where_clause(clause):
 
     return conds
 
-
 def parse_conditions(cond):
     tokens = sql.TokenList(cond.tokens)
 
     field_token = tokens.token_first()
-    x = Field(str(field_token))
-    comp = tokens.token_next(tokens.token_index(field_token))
-    y = tokens.token_next(tokens.token_index(comp))
+    if isinstance(field_token, sql.Identifier):
+        x = Field(str(field_token))
+    else:
+        x = str(field_token)
 
-    return Comparison(str(x), str(y), str(comp))
+    comp = tokens.token_next(tokens.token_index(field_token))
+
+
+    value_token = tokens.token_next(tokens.token_index(comp))
+    if isinstance(value_token, sql.Identifier):
+        y = Field(str(value_token))
+    else:
+        y = str(value_token)
+
+    return Comparison(x, y, str(comp))
 
 def print_parse_tree(root):
     def aux(node, level):
