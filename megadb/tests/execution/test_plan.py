@@ -74,4 +74,15 @@ class PlanTestCase(unittest.TestCase):
             for t in it:
                 print t
 
+    def test_cross_join_with_field_comparison(self):
+        selection = Selection(None, [Comparison(Field('a1'), Field('b1'), '=')])
+        cross_join = CrossJoin(selection)
+        alpha = Relation(cross_join, 'Alpha', self.schema.relations['Alpha'])
+        beta = Relation(cross_join, 'Beta', self.schema.relations['Beta'])
+
+        with selection:
+            it = selection.iterate()
+            for t in it:
+                print t
+
 

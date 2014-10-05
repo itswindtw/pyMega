@@ -106,6 +106,9 @@ class Projection(TreeNode, Plan):
 
 def eval_conds(tuple, conds):
     def extract_field(tuple, field):
+        if not isinstance(field, Field):
+            return field
+
         field_value = tuple.get(field)
 
         if field_value is not None:
@@ -115,9 +118,12 @@ def eval_conds(tuple, conds):
             if k.name == field.name:
                 return v
 
+
     def eval_cond(tuple, cond):
         lopnd = extract_field(tuple, cond.x)
-        ropnd = type(lopnd)(cond.y)
+        ropnd = extract_field(tuple, cond.y)
+
+        ropnd = type(lopnd)(ropnd)
 
         # TODO: support more operators
         optr = operator.eq
