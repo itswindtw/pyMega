@@ -83,8 +83,13 @@ def parse_where_clause(clause):
 def parse_conditions(cond):
     tokens = sql.TokenList(cond.tokens)
 
-    x = tokens.token_first()
-    comp = tokens.token_next(tokens.token_index(x))
+    field_token = tokens.token_first()
+    field_fullname = str(field_token).split('.')
+    if len(field_fullname) > 1:
+        x = Field(field_fullname[0], field_fullname[1])
+    else:
+        x = Field(field_fullname[0])
+    comp = tokens.token_next(tokens.token_index(field_token))
     y = tokens.token_next(tokens.token_index(comp))
 
     return Comparison(str(x), str(y), str(comp))

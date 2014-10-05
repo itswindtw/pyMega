@@ -1,5 +1,16 @@
 from megadb.tree import LeafNode, TreeNode
 
+class Field(object):
+    def __init__(self, name, namespace=None):
+        self.name = name
+        self.namespace = namespace
+
+    def __repr__(self):
+        if self.namespace:
+            return 'Field(' + self.namespace + '.' + self.name + ')'
+        else:
+            return 'Field(' + self.name + ')'
+
 class Comparison(object):
     def __init__(self, x, y, comp):
         self.x = x
