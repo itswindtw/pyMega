@@ -1,42 +1,10 @@
-import re, os, __builtin__
+import os
 import collections
 import operator
 
 import megadb.settings as settings
 from megadb.tree import LeafNode, TreeNode
 from megadb.algebra.plan import Field
-
-class Schema(object):
-    def __init__(self):
-        super(Schema, self).__init__()
-        self.relations = {}
-
-    def load(self):
-        pattern = re.compile('^(\w+)\((.*)\)$')
-
-        def wrapped_field(field):
-            # [abc, STR] -> [abc, type<str>]
-            return [field[0], getattr(__builtin__, field[1].lower())]
-
-        def parse_line(line):
-            match = pattern.search(line)
-            if match is None:
-                print "Can't parse {0}".format(line)
-                return
-
-            rname = match.group(1)
-            fields = [wrapped_field(f.split(':')) for f in match.group(2).split(',')]
-
-            return rname, fields
-
-        path = os.path.join(settings.RELATIONS_PATH, 'Schema')
-        with open(path, 'r') as f:
-            for line in f:
-                rname, fields = parse_line(line)
-                if rname:
-                    self.relations[rname] = fields
-
-    # TODO: a factory method for relation
 
 class Plan(object):
     # FIXME: we only need iterate api here?

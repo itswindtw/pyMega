@@ -1,5 +1,6 @@
 import unittest
 from megadb.execution.plan import *
+from megadb.execution.executor import Schema
 from megadb.algebra.plan import Comparison, Field
 
 class SchemaTestCase(unittest.TestCase):
@@ -138,6 +139,5 @@ class OptimizationPlanTestCase(PlanTestCase):
             _, cost = projection.get_tuples()
 
             costs.append(sum(cost))
-
 
         print costs

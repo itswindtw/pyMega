@@ -22,6 +22,9 @@ class Field(object):
 
         return self.name == other.name and self.namespace == other.namespace
 
+    def __hash__(self):
+        return hash((self.name, self.namespace))
+
     @classmethod
     def from_components(cls, name, namespace=None):
         if namespace:
