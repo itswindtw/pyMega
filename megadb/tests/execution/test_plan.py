@@ -16,13 +16,13 @@ class PlanTestCase(unittest.TestCase):
 
         print "Schema is ready..."
 
+class BasicPlanTestCase(PlanTestCase):
     def test_relation(self):
         alpha = Relation(None, 'Alpha', self.schema.relations['Alpha'])
 
         with alpha:
-            it = alpha.iterate()
-            for s in it:
-                print s
+            tuples = alpha.get_tuples()
+            print tuples
 
     def test_projection(self):
         fields = [Field(name) for (name, type) in self.schema.relations['Alpha'][0:1]]
@@ -30,27 +30,24 @@ class PlanTestCase(unittest.TestCase):
         alpha = Relation(projection, 'Alpha', self.schema.relations['Alpha'])
 
         with projection:
-            it = projection.iterate()
-            for t in it:
-                print t
+            tuples = projection.get_tuples()
+            print tuples
 
-    def test_selection_one_cond(self):
+    def test_select_with_one_cond(self):
         selection = Selection(None, [Comparison(Field('a1'), '3', '=')])
         alpha = Relation(selection, 'Alpha', self.schema.relations['Alpha'])
 
         with selection:
-            it = selection.iterate()
-            for t in it:
-                print t
+            tuples = selection.get_tuples()
+            print tuples
 
-    def test_selection_two_cond(self):
+    def test_select_with_two_cond(self):
         selection = Selection(None, [Comparison(Field('a1'), '3', '='), Comparison(Field('a2'), 'cc', '=')])
         alpha = Relation(selection, 'Alpha', self.schema.relations['Alpha'])
 
         with selection:
-            it = selection.iterate()
-            for t in it:
-                print t
+            tuples = selection.get_tuples()
+            print tuples
 
     def test_selection_then_projection(self):
         fields = [Field(name) for (name, type) in self.schema.relations['Alpha'][1:]]
@@ -59,22 +56,21 @@ class PlanTestCase(unittest.TestCase):
         alpha = Relation(selection, 'Alpha', self.schema.relations['Alpha'])
 
         with projection:
-            it = projection.iterate()
-            for t in it:
-                print t
+            tuples = projection.get_tuples()
+            print tuples
 
-    def test_cross_join_then_selection(self):
+class CrossJoinPlanTestCase(PlanTestCase):
+    def test_crossjoin_then_selection(self):
         selection = Selection(None, [Comparison(Field('a1'), '3', '=')])
         cross_join = CrossJoin(selection)
         alpha = Relation(cross_join, 'Alpha', self.schema.relations['Alpha'])
         beta = Relation(cross_join, 'Beta', self.schema.relations['Beta'])
 
         with selection:
-            it = selection.iterate()
-            for t in it:
-                print t
+            tuples = selection.get_tuples()
+            print tuples
 
-    def test_cross_join_with_field_comparison(self):
+    def test_crossjoin_with_field_comparison(self):
         projection = Projection(None, [])
         selection = Selection(projection, [Comparison(Field('a1'), Field('b1'), '=')])
         cross_join = CrossJoin(selection)
@@ -82,12 +78,10 @@ class PlanTestCase(unittest.TestCase):
         beta = Relation(cross_join, 'Beta', self.schema.relations['Beta'])
 
         with projection:
-            it = projection.iterate()
-            for t in it:
-                print t
+            tuples = selection.get_tuples()
+            print tuples
 
-            print "Cost: ", projection.get_costs()
-
+class ThetaJoinPlanTestCase(PlanTestCase):
     def test_theta_join(self):
         projection = Projection(None, [])
         theta = ThetaJoin(projection, [Comparison(Field('a1'), 3, '='), Comparison(Field('a1'), Field('b1'), '=')])
@@ -96,47 +90,45 @@ class PlanTestCase(unittest.TestCase):
         beta = Relation(theta, 'Beta', self.schema.relations['Beta'])
 
         with projection:
-            it = projection.iterate()
-            for t in it:
-                print t
+            tuples = projection.get_tuples()
+            print tuples
 
-            print "Cost: ", projection.get_costs()
-
+class OptimizationPlanTestCase(PlanTestCase):
     def test_cost_of_cross_join(self):
         costs = []
 
-        # naive
-        projection = Projection(None, [])
-        selection = Selection(projection, [Comparison(Field('a1'), 3, '='), Comparison(Field('a1'), Field('b1'), '=')])
+    #     # naive
+    #     projection = Projection(None, [])
+    #     selection = Selection(projection, [Comparison(Field('a1'), 3, '='), Comparison(Field('a1'), Field('b1'), '=')])
 
-        join = CrossJoin(selection)
+    #     join = CrossJoin(selection)
 
-        alpha = Relation(join, 'Alpha', self.schema.relations['Alpha'])
-        beta = Relation(join, 'Beta', self.schema.relations['Beta'])
+    #     alpha = Relation(join, 'Alpha', self.schema.relations['Alpha'])
+    #     beta = Relation(join, 'Beta', self.schema.relations['Beta'])
 
-        with projection:
-            it = projection.iterate()
-            for t in it:
-                pass
+    #     with projection:
+    #         it = projection.iterate()
+    #         for t in it:
+    #             pass
 
-            costs.append(sum(projection.get_costs()))
+    #         costs.append(sum(projection.get_costs()))
 
-        # push selections down
-        projection = Projection(None, [])
-        selection = Selection(projection, [Comparison(Field('a1'), Field('b1'), '=')])
+    #     # push selections down
+    #     projection = Projection(None, [])
+    #     selection = Selection(projection, [Comparison(Field('a1'), Field('b1'), '=')])
 
-        join = CrossJoin(selection)
+    #     join = CrossJoin(selection)
 
-        a1_selection = Selection(join, [Comparison(Field('a1'), 3, '=')])
-        alpha = Relation(a1_selection, 'Alpha', self.schema.relations['Alpha'])
-        beta = Relation(join, 'Beta', self.schema.relations['Beta'])
+    #     a1_selection = Selection(join, [Comparison(Field('a1'), 3, '=')])
+    #     alpha = Relation(a1_selection, 'Alpha', self.schema.relations['Alpha'])
+    #     beta = Relation(join, 'Beta', self.schema.relations['Beta'])
 
-        with projection:
-            it = projection.iterate()
-            for t in it:
-                pass
+    #     with projection:
+    #         it = projection.iterate()
+    #         for t in it:
+    #             pass
 
-            costs.append(sum(projection.get_costs()))
+    #         costs.append(sum(projection.get_costs()))
 
 
-        print costs
+    #     print costs
