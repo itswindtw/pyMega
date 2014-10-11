@@ -74,8 +74,10 @@ class CrossJoin(TreeNode):
     def __repr__(self):
         return "CrossJoin"
 
-# class ThetaJoin(TreeNode):
-#     def __init__(self, parent, conds, tables):
-#         super(ThetaJoin, self).__init__(parent)
-#         self.conds = conds
-#         self.tables = tables
+class ThetaJoin(TreeNode):
+    def __init__(self, parent, conds):
+        super(ThetaJoin, self).__init__(parent)
+        self.conds = conds
+
+    def __repr__(self):
+        return "ThetaJoin: " + str(self.conds)
