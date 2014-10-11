@@ -46,6 +46,9 @@ class Plan(object):
     def iterate(self):
         raise NotImplementedError()
 
+    def get_costs(self):
+        raise NotImplementedError()
+
     def close(self):
         raise NotImplementedError()
 
@@ -66,7 +69,7 @@ class Relation(LeafNode, Plan):
 
     def open(self):
         # self._file = open(self.path, 'r')
-        pass
+        self.cost = 0
 
     def iterate(self):
         with open(self.path, 'r') as relation_file:
@@ -78,7 +81,26 @@ class Relation(LeafNode, Plan):
                     field = Field.from_components(field_name, self.name)
                     tuple[field] = field_type(value)
 
+                self.cost += 1
                 yield tuple
+
+    # def get_tuples(self):
+    #     tuples = []
+
+    #     with open(self.path, 'r') as relation_file:
+    #         for line in relation_file:
+    #             tuple = collections.OrderedDict()
+
+    #             values = line.rstrip().split('#')
+    #             for (field_name, field_type), value in zip(self.fields, values):
+    #                 field = Field.from_components(field_name, self.name)
+    #                 tuple[field] = field_type(value)
+
+    #             tuples.append(tuple)
+    #     return tuples
+
+    def get_costs(self):
+        return [self.cost]
 
     def close(self):
         # self._file.close()
@@ -92,14 +114,30 @@ class Projection(TreeNode, Plan):
     def open(self):
         assert(len(self.children) == 1)
         self.children[0].open()
+        self.cost = 0
 
     def iterate(self):
         for tuple in self.children[0].iterate():
+            self.cost += 1
             if len(self.fields) == 0:
                 yield tuple.items()
             else:
                 # FIXME: ambiguous?
                 yield [(k, v) for (k, v) in tuple.iteritems() if k in self.fields]
+
+    # def get_tuples(self):
+    #     tuples = self.children[0].get_tuples()
+
+    #     if len(self.fields) == 0:
+    #         return tuples
+    #     else:
+    #         return [ [(k, v) for (k, v) in tuple.iteritems() if k in self.fields]
+    #                 for tuple in tuples]
+
+    def get_costs(self):
+        costs = self.children[0].get_costs()
+        costs.append(self.cost)
+        return costs
 
     def close(self):
         self.children[0].close()
@@ -143,11 +181,18 @@ class Selection(TreeNode, Plan):
     def open(self):
         assert(len(self.children) == 1)
         self.children[0].open()
+        self.cost = 0
 
     def iterate(self):
         for tuple in self.children[0].iterate():
             if eval_conds(tuple, self.conds):
+                self.cost += 1
                 yield tuple
+
+    def get_costs(self):
+        costs = self.children[0].get_costs()
+        costs.append(self.cost)
+        return costs
 
     def close(self):
         self.children[0].close()
@@ -162,12 +207,20 @@ class CrossJoin(TreeNode, Plan):
     def open(self):
         assert(len(self.children) == 2)
         self.children[0].open()
+        self.cost = 0
 
     def iterate(self):
         for tuple_l in self.children[0].iterate():
             with self.children[1]:
                 for tuple_r in self.children[1].iterate():
+                    self.cost +=1
                     yield merge_tuples(tuple_l, tuple_r)
+
+    def get_costs(self):
+        l_cost = self.children[0].get_costs()
+        r_cost = self.children[1].get_costs()
+
+        return l_cost + r_cost + [self.cost]
 
     def close(self):
         self.children[0].close()
@@ -181,7 +234,7 @@ class ThetaJoin(TreeNode, Plan):
     def open(self):
         assert(len(self.children) == 2)
         self.children[0].open()
-
+        self.cost = 0
 
     def iterate(self):
         for tuple_p in self.children[0].iterate():
@@ -189,7 +242,14 @@ class ThetaJoin(TreeNode, Plan):
                 for tuple_q in self.children[1].iterate():
                     result = merge_tuples(tuple_p, tuple_q)
                     if eval_conds(result, self.conds):
+                        self.cost += 1
                         yield result
+
+    def get_costs(self):
+        l_cost = self.children[0].get_costs()
+        r_cost = self.children[1].get_costs()
+
+        return l_cost + r_cost + [self.cost]
 
     def close(self):
         self.children[0].close()

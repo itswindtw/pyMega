@@ -75,14 +75,68 @@ class PlanTestCase(unittest.TestCase):
                 print t
 
     def test_cross_join_with_field_comparison(self):
-        selection = Selection(None, [Comparison(Field('a1'), Field('b1'), '=')])
+        projection = Projection(None, [])
+        selection = Selection(projection, [Comparison(Field('a1'), Field('b1'), '=')])
         cross_join = CrossJoin(selection)
         alpha = Relation(cross_join, 'Alpha', self.schema.relations['Alpha'])
         beta = Relation(cross_join, 'Beta', self.schema.relations['Beta'])
 
-        with selection:
-            it = selection.iterate()
+        with projection:
+            it = projection.iterate()
             for t in it:
                 print t
 
+            print "Cost: ", projection.get_costs()
 
+    def test_theta_join(self):
+        projection = Projection(None, [])
+        theta = ThetaJoin(projection, [Comparison(Field('a1'), 3, '='), Comparison(Field('a1'), Field('b1'), '=')])
+
+        alpha = Relation(theta, 'Alpha', self.schema.relations['Alpha'])
+        beta = Relation(theta, 'Beta', self.schema.relations['Beta'])
+
+        with projection:
+            it = projection.iterate()
+            for t in it:
+                print t
+
+            print "Cost: ", projection.get_costs()
+
+    def test_cost_of_cross_join(self):
+        costs = []
+
+        # naive
+        projection = Projection(None, [])
+        selection = Selection(projection, [Comparison(Field('a1'), 3, '='), Comparison(Field('a1'), Field('b1'), '=')])
+
+        join = CrossJoin(selection)
+
+        alpha = Relation(join, 'Alpha', self.schema.relations['Alpha'])
+        beta = Relation(join, 'Beta', self.schema.relations['Beta'])
+
+        with projection:
+            it = projection.iterate()
+            for t in it:
+                pass
+
+            costs.append(sum(projection.get_costs()))
+
+        # push selections down
+        projection = Projection(None, [])
+        selection = Selection(projection, [Comparison(Field('a1'), Field('b1'), '=')])
+
+        join = CrossJoin(selection)
+
+        a1_selection = Selection(join, [Comparison(Field('a1'), 3, '=')])
+        alpha = Relation(a1_selection, 'Alpha', self.schema.relations['Alpha'])
+        beta = Relation(join, 'Beta', self.schema.relations['Beta'])
+
+        with projection:
+            it = projection.iterate()
+            for t in it:
+                pass
+
+            costs.append(sum(projection.get_costs()))
+
+
+        print costs
