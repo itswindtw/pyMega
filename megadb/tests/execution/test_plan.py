@@ -3,13 +3,6 @@ from megadb.execution.plan import *
 from megadb.execution.executor import Schema
 from megadb.algebra.plan import Comparison, Field
 
-class SchemaTestCase(unittest.TestCase):
-    def test_load(self):
-        schema = Schema()
-        schema.load()
-
-        self.assertTrue(len(schema.relations) > 0)
-
 class PlanTestCase(unittest.TestCase):
     def setUp(self):
         self.schema = Schema()

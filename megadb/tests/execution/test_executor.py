@@ -4,6 +4,20 @@ from megadb.algebra.parser import parse_sql, print_parse_tree
 from megadb.execution.plan import *
 from megadb.algebra.plan import Comparison, Field
 
+class SchemaTestCase(unittest.TestCase):
+    def test_load(self):
+        schema = Schema()
+        schema.load()
+
+        self.assertTrue(len(schema.relations) > 0)
+
+    def test_load_statistics(self):
+        schema = Schema()
+        schema.load()
+        schema.load_statistics()
+
+        print schema.stats
+
 class ExecutorTestCase(unittest.TestCase):
     def setUp(self):
         schema = Schema()

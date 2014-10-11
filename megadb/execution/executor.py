@@ -9,6 +9,7 @@ class Schema(object):
     def __init__(self):
         super(Schema, self).__init__()
         self.relations = {}
+        self.stats = {}
 
     def load(self):
         pattern = re.compile('^(\w+)\((.*)\)$')
@@ -34,6 +35,30 @@ class Schema(object):
                 rname, fields = parse_line(line)
                 if rname:
                     self.relations[rname] = fields
+
+    def load_statistics(self):
+        def extract_stat(relation):
+            tuples, _ = relation.get_tuples()
+
+            total = len(tuples)
+            distinct = {}
+
+            for fname, _ in relation.fields:
+                values = set()
+                field = logical.Field.from_components(fname, relation.name)
+
+                for tuple in tuples:
+                    value = tuple[field]
+                    values.add(value)
+
+                distinct[fname] = len(values)
+
+            return [total, distinct]
+
+        for (rname, fields) in self.relations.iteritems():
+            relation = plan.Relation(None, rname, fields)
+
+            self.stats[rname] = extract_stat(relation)
 
     # TODO: a factory method for relation
 
