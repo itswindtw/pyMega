@@ -152,6 +152,9 @@ class Selection(TreeNode, Plan):
     def close(self):
         self.children[0].close()
 
+def merge_tuples(p, q):
+    return collections.OrderedDict(p.items() + q.items())
+
 class CrossJoin(TreeNode, Plan):
     def __init__(self, parent):
         super(CrossJoin, self).__init__(parent)
@@ -161,15 +164,32 @@ class CrossJoin(TreeNode, Plan):
         self.children[0].open()
 
     def iterate(self):
-        def merge(p, q):
-            # TODO: resolve conflicts on same field names
-            return collections.OrderedDict(p.items() + q.items())
-
         for tuple_l in self.children[0].iterate():
             with self.children[1]:
                 for tuple_r in self.children[1].iterate():
-                    yield merge(tuple_l, tuple_r)
+                    yield merge_tuples(tuple_l, tuple_r)
 
     def close(self):
         self.children[0].close()
 
+
+class ThetaJoin(TreeNode, Plan):
+    def __init__(self, parent, conds):
+        super(ThetaJoin, self).__init__(parent)
+        self.conds = conds
+
+    def open(self):
+        assert(len(self.children) == 2)
+        self.children[0].open()
+
+
+    def iterate(self):
+        for tuple_p in self.children[0].iterate():
+            with self.children[1]:
+                for tuple_q in self.children[1].iterate():
+                    result = merge_tuples(tuple_p, tuple_q)
+                    if eval_conds(result, self.conds):
+                        yield result
+
+    def close(self):
+        self.children[0].close()
