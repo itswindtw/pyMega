@@ -66,11 +66,6 @@ class PushSelectionDownOptimizator(BaseOptimizator):
 
                 selection.conds = new_conds
 
-                # top = selection
-                # while top.parent:
-                #     top = top.parent
-                # print_parse_tree(top)
-
             tree_traverse(selection, algebra.CrossJoin, visit_join)
 
             if not selection.conds:
