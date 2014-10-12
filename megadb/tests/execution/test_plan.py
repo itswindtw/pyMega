@@ -78,7 +78,7 @@ class CrossJoinPlanTestCase(PlanTestCase):
 class ThetaJoinPlanTestCase(PlanTestCase):
     def test_theta_join(self):
         projection = Projection(None, [])
-        theta = ThetaJoin(projection, [Comparison(Field('a1'), 3, '='), Comparison(Field('a1'), Field('b1'), '=')])
+        theta = ThetaJoin(projection, [Comparison(Field('a1'), Field('b1'), '=')])
 
         alpha = Relation(theta, 'Alpha', self.schema.relations['Alpha'])
         beta = Relation(theta, 'Beta', self.schema.relations['Beta'])

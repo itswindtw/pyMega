@@ -154,6 +154,7 @@ class ThetaJoin(TreeNode, Plan):
 
     def open(self):
         assert(len(self.children) == 2)
+        assert(len(self.conds) == 1)
         self.children[0].open()
 
     def get_tuples(self):
