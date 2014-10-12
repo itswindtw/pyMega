@@ -1,17 +1,20 @@
 import megadb.tree as tree
 import megadb.algebra as algebra
 
+from megadb.algebra.parser import print_parse_tree
+
 class BaseOptimizator(object):
     def run(self, tree):
         raise NotImplementedError()
 
 def tree_traverse(root, type, visit):
+    children = root.children[:] if isinstance(root, tree.TreeNode) else []
+
     if isinstance(root, type):
         visit(root)
 
-    if isinstance(root, tree.TreeNode):
-        for c in root.children:
-            tree_traverse(c, type, visit)
+    for c in children:
+        tree_traverse(c, type, visit)
 
 def collect_namespaces(node):
     if isinstance(node, algebra.Relation):
@@ -58,13 +61,21 @@ class PushSelectionDownOptimizator(BaseOptimizator):
                     else:
                         new_conds.append(cond)
 
-                if new_conds:
-                    selection.conds = new_conds
-                else:
-                    selection.children[0].parent = selection.parent
-                    selection.parent = None
+
+                assert(len(selection.children) == 1)
+
+                selection.conds = new_conds
+
+                # top = selection
+                # while top.parent:
+                #     top = top.parent
+                # print_parse_tree(top)
 
             tree_traverse(selection, algebra.CrossJoin, visit_join)
+
+            if not selection.conds:
+                selection.children[0].parent = selection.parent
+                selection.parent = None
 
         tree_traverse(root, algebra.Selection, visit_selection)
         return root
