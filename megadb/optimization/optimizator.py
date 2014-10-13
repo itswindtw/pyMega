@@ -26,11 +26,13 @@ def collect_namespaces(node):
         return ns
 
 class PushSelectionDownOptimizator(BaseOptimizator):
-    # 1. find selection
-    # 2. find join
-    # 3. check namespace set of two children
-    # 4. move applicable conditions to corresponding side
-    # recursive on children
+    """
+    1. find selection
+    2. find join
+    3. check namespace set of two children
+    4. move applicable conditions to corresponding side
+    -> recursive on children
+    """
 
     def run(self, root):
         def visit_selection(selection):
@@ -77,10 +79,12 @@ class PushSelectionDownOptimizator(BaseOptimizator):
 
 
 class CrossJoinToThetaJoinOptimizator(BaseOptimizator):
-    # Notice: apply this after push selections down optimizator
-    # 1. find selection
-    # 2. check that its child is cross join
-    # 3. if yes: merge two node into one thetajoin
+    """
+    Notice: apply this after push selections down optimizator
+    1. find selection
+    2. check that its child is cross join
+    3. if yes: merge two node into one thetajoin
+    """
 
     def run(self, root):
         def visit_selection(selection):
