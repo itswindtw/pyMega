@@ -31,6 +31,7 @@ class PushSelectionDownOptimizator(BaseOptimizator):
     # 3. check namespace set of two children
     # 4. move applicable conditions to corresponding side
     # recursive on children
+
     def run(self, root):
         def visit_selection(selection):
             def visit_join(join):
@@ -61,7 +62,6 @@ class PushSelectionDownOptimizator(BaseOptimizator):
                     else:
                         new_conds.append(cond)
 
-
                 assert(len(selection.children) == 1)
 
                 selection.conds = new_conds
@@ -75,9 +75,34 @@ class PushSelectionDownOptimizator(BaseOptimizator):
         tree_traverse(root, algebra.Selection, visit_selection)
         return root
 
+
+class CrossJoinToThetaJoinOptimizator(BaseOptimizator):
+    # Notice: apply this after push selections down optimizator
+    # 1. find selection
+    # 2. check that its child is cross join
+    # 3. if yes: merge two node into one thetajoin
+
+    def run(self, root):
+        def visit_selection(selection):
+            if (selection.children
+                    and isinstance(selection.children[0], algebra.CrossJoin)):
+                theta_join = algebra.ThetaJoin(selection.parent, selection.conds)
+
+                cross_join = selection.children[0]
+                for c in cross_join.children[:]:
+                    c.parent = theta_join
+
+                selection.parent = None
+
+                tree_traverse(theta_join, algebra.Selection, visit_selection)
+
+        tree_traverse(root, algebra.Selection, visit_selection)
+        return root
+
+
 class PushProjectionDownOptimizator(BaseOptimizator):
-    def run(self, tree):
-        return tree
+    def run(self, root):
+        return root
 
 #########
 
