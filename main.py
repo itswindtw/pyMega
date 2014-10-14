@@ -4,6 +4,7 @@
 #   Accept user input
 #   Process the query, and output result
 #
+#   SELECT * FROM Students WHERE Students.gender = 'M' AND Students.Degree = 'Master'
 #   TODO: refactor it!
 
 import sys
@@ -12,6 +13,7 @@ import importlib
 from PySide.QtCore import *
 from PySide.QtGui import *
 
+import megadb.tree
 import megadb.optimization.optimizator as optimizator
 from megadb.algebra.parser import parse_sql, print_parse_tree
 from megadb.execution.executor import Schema, Executor
@@ -125,6 +127,10 @@ class ResultWindow(QWidget):
         self.build_tree(tree)
         self.build_tuples(tuples[0])
 
+        tree_view = QTreeView(self)
+        tree_view.setModel(self.tree_model)
+        layout.addWidget(tree_view)
+
         table_view = QTableView(self)
         table_view.setModel(self.table_model)
         layout.addWidget(table_view)
@@ -132,7 +138,18 @@ class ResultWindow(QWidget):
         self.setLayout(layout)
 
     def build_tree(self, tree):
-        pass
+        def aux(root):
+            item = QStandardItem(str(root))
+
+            if isinstance(root, megadb.tree.TreeNode):
+                for c in root.children:
+                    item.appendRow(aux(c))
+
+            return item
+
+        self.tree_model = QStandardItemModel(self)
+        self.tree_model.setHorizontalHeaderLabels(['Algebra Tree'])
+        self.tree_model.appendRow(aux(tree))
 
     def build_tuples(self, tuples):
         self.table_model = QStandardItemModel(self)
