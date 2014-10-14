@@ -16,6 +16,12 @@ class Field(object):
         else:
             return 'Field(' + self.name + ')'
 
+    def __str__(self):
+        if self.namespace:
+            return '.'.join([self.namespace, self.name])
+        else:
+            return self.name
+
     def __eq__(self, other):
         if self.namespace is None or other.namespace is None:
             return self.name == other.name

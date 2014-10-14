@@ -89,6 +89,7 @@ class CrossJoinToThetaJoinOptimizator(BaseOptimizator):
     def run(self, root):
         def visit_selection(selection):
             if (selection.children
+                    and len(selection.conds) == 1
                     and isinstance(selection.children[0], algebra.CrossJoin)):
                 theta_join = algebra.ThetaJoin(selection.parent, selection.conds)
 
