@@ -4,7 +4,10 @@
 #   Accept user input
 #   Process the query, and output result
 #
+#   Test Cases:
 #   SELECT * FROM Students WHERE Students.gender = 'M' AND Students.degree = 'Master'
+#   SELECT Students.name, Students.id FROM Students, Grades, Courses WHERE Grades.stu_id = Students.id AND Grades.course_id = Courses.id AND Grades.grade = 'A'
+#
 #   TODO: refactor it!
 
 import sys
@@ -156,11 +159,11 @@ class ResultWindow(QWidget):
 
         if tuples:
             tuple = tuples[0]
-            fields = [str(f) for f in tuple.keys()]
+            fields = [str(k) for (k, _) in tuple]
             self.table_model.setHorizontalHeaderLabels(fields)
 
         for row, tuple in enumerate(tuples):
-            for col, (field, value) in enumerate(tuple.iteritems()):
+            for col, (field, value) in enumerate(tuple):
                 item = QStandardItem(str(value))
                 self.table_model.setItem(row, col, item)
 

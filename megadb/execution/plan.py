@@ -68,7 +68,7 @@ class Projection(TreeNode, Plan):
         costs.append(len(tuples))
 
         if len(self.fields) == 0:
-            return tuples, costs
+            return [list(tuple.iteritems()) for tuple in tuples], costs
         else:
             return [ [(k, v) for (k, v) in tuple.iteritems() if k in self.fields]
                     for tuple in tuples], costs
