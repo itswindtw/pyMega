@@ -46,7 +46,7 @@ class Comparison(object):
         self.comp = comp
 
     def __repr__(self):
-        return ' '.join([str(x) for x in [self.x, self.comp, self.y]])
+        return ' '.join([repr(x) for x in [self.x, self.comp, self.y]])
 
 ###
 

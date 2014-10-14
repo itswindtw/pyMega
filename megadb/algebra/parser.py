@@ -94,6 +94,8 @@ def parse_conditions(cond):
     value_token = tokens.token_next(tokens.token_index(comp))
     if isinstance(value_token, sql.Identifier):
         y = Field(str(value_token))
+    elif value_token.ttype == sqlparse.tokens.String.Single:
+        y = str(value_token)[1:-1]
     else:
         y = str(value_token)
 
