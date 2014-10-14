@@ -4,7 +4,7 @@
 #   Accept user input
 #   Process the query, and output result
 #
-#   SELECT * FROM Students WHERE Students.gender = 'M' AND Students.Degree = 'Master'
+#   SELECT * FROM Students WHERE Students.gender = 'M' AND Students.degree = 'Master'
 #   TODO: refactor it!
 
 import sys
