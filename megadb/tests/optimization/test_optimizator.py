@@ -19,14 +19,14 @@ class PushSelectionDownOptimizatorTestCase(unittest.TestCase):
         print_parse_tree(opt.run(tree))
 
 
-class CrossJoinToThetaJoinOptimizatorTestCase(unittest.TestCase):
+class CartesianProductToThetaJoinOptimizatorTestCase(unittest.TestCase):
     def test_complex(self):
         tree = parse_sql("SELECT * FROM Professor, Course, Grade, Student  WHERE \
             Grade.StudentID = Student.ID AND Grade.CourseID = Course.ID AND Course.ProfessorID = Professor.ID AND \
             Student.GraduationYear = 2005 AND Course.Department = 'ECE' AND Professor.Department = 'CS'")
 
         push_opt = PushSelectionDownOptimizator()
-        join_opt = CrossJoinToThetaJoinOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator()
 
         print_parse_tree(join_opt.run(push_opt.run(tree)))
 

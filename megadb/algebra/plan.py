@@ -76,12 +76,12 @@ class Selection(TreeNode):
     def __repr__(self):
         return "Selection: " + str(self.conds)
 
-class CrossJoin(TreeNode):
+class CartesianProduct(TreeNode):
     def __init__(self, parent):
-        super(CrossJoin, self).__init__(parent)
+        super(CartesianProduct, self).__init__(parent)
 
     def __repr__(self):
-        return "CrossJoin"
+        return "CartesianProduct"
 
 class ThetaJoin(TreeNode):
     def __init__(self, parent, conds):

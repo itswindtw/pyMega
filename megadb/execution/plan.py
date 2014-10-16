@@ -1,15 +1,24 @@
 import os
 import collections
 import operator
+import timeit
 
 import megadb.settings as settings
 from megadb.tree import LeafNode, TreeNode
 from megadb.algebra.plan import Field
 
 class Plan(object):
-    # FIXME: we only need iterate api here?
     def open(self):
         raise NotImplementedError()
+
+    def run(self):
+        start_at = timeit.default_timer()
+        tuples = self.get_tuples()
+        end_at = timeit.default_timer()
+
+        self.time_duration = end_at - start_at
+        self.table_size = len(tuples)
+        return tuples
 
     def get_tuples(self):
         raise NotImplementedError()
@@ -23,6 +32,10 @@ class Plan(object):
 
     def __exit__(self, type, value, traceback):
         self.close()
+
+    def __str__(self):
+        return ("\t| Table size: %5d, Time comsumed: %.2f ms"
+                    % (self.table_size, self.time_duration * 1000.0))
 
 class Relation(LeafNode, Plan):
     def __init__(self, parent, name, fields):
@@ -49,7 +62,7 @@ class Relation(LeafNode, Plan):
 
                 tuples.append(tuple)
 
-        return tuples, []
+        return tuples
 
     def close(self):
         pass
@@ -64,14 +77,13 @@ class Projection(TreeNode, Plan):
         self.children[0].open()
 
     def get_tuples(self):
-        tuples, costs = self.children[0].get_tuples()
-        costs.append(len(tuples))
+        tuples = self.children[0].run()
 
         if len(self.fields) == 0:
-            return [list(tuple.iteritems()) for tuple in tuples], costs
+            return [list(tuple.iteritems()) for tuple in tuples]
         else:
             return [ [(k, v) for (k, v) in tuple.iteritems() if k in self.fields]
-                    for tuple in tuples], costs
+                    for tuple in tuples]
 
     def close(self):
         self.children[0].close()
@@ -117,10 +129,9 @@ class Selection(TreeNode, Plan):
         self.children[0].open()
 
     def get_tuples(self):
-        tuples, costs = self.children[0].get_tuples()
-        costs.append(len(tuples))
+        tuples = self.children[0].run()
 
-        return [tuple for tuple in tuples if eval_conds(tuple, self.conds)], costs
+        return [tuple for tuple in tuples if eval_conds(tuple, self.conds)]
 
     def close(self):
         self.children[0].close()
@@ -128,28 +139,26 @@ class Selection(TreeNode, Plan):
 def merge_tuples(p, q):
     return collections.OrderedDict(p.items() + q.items())
 
-class CrossJoin(TreeNode, Plan):
+class CartesianProduct(TreeNode, Plan):
     def __init__(self, parent):
-        super(CrossJoin, self).__init__(parent)
+        super(CartesianProduct, self).__init__(parent)
 
     def open(self):
         assert(len(self.children) == 2)
         self.children[0].open()
 
     def get_tuples(self):
-        (ts1, cs1), (ts2, cs2) = [c.get_tuples() for c in self.children]
-        cs1.append(len(ts1))
-        cs2.append(len(ts2))
+        ts1, ts2 = [c.run() for c in self.children]
 
-        return [merge_tuples(t1, t2) for t1 in ts1 for t2 in ts2], cs1 + cs2
+        return [merge_tuples(t1, t2) for t1 in ts1 for t2 in ts2]
 
     def close(self):
         self.children[0].close()
 
 
-class ThetaJoin(TreeNode, Plan):
+class NLJoin(TreeNode, Plan):
     def __init__(self, parent, conds):
-        super(ThetaJoin, self).__init__(parent)
+        super(NLJoin, self).__init__(parent)
         self.conds = conds
 
     def open(self):
@@ -158,9 +167,7 @@ class ThetaJoin(TreeNode, Plan):
         self.children[0].open()
 
     def get_tuples(self):
-        (ts1, cs1), (ts2, cs2) = [c.get_tuples() for c in self.children]
-        cs1.append(len(ts1))
-        cs2.append(len(ts2))
+        ts1, ts2 = [c.run() for c in self.children]
 
         joined = []
 
@@ -170,7 +177,7 @@ class ThetaJoin(TreeNode, Plan):
                 if eval_conds(r, self.conds):
                     joined.append(r)
 
-        return joined, cs1 + cs2
+        return joined
 
     def close(self):
         self.children[0].close()

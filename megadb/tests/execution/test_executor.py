@@ -39,9 +39,9 @@ class ExecutorTestCase(unittest.TestCase):
         # construct from scratch
         projection = Projection(None, [])
         selection = Selection(projection, [Comparison(Field('a1'), Field('b1'), '=')])
-        cross_join = CrossJoin(selection)
-        alpha = Relation(cross_join, 'Alpha', self.executor.schema.relations['Alpha'])
-        beta = Relation(cross_join, 'Beta', self.executor.schema.relations['Beta'])
+        cross = CartesianProduct(selection)
+        alpha = Relation(cross, 'Alpha', self.executor.schema.relations['Alpha'])
+        beta = Relation(cross, 'Beta', self.executor.schema.relations['Beta'])
 
         parser_result = self.executor.execute_plan(translated)
         scratch_result = self.executor.execute_plan(projection)

@@ -68,7 +68,7 @@ class PushSelectionDownOptimizator(BaseOptimizator):
 
                 selection.conds = new_conds
 
-            tree_traverse(selection, algebra.CrossJoin, visit_join)
+            tree_traverse(selection, algebra.CartesianProduct, visit_join)
 
             if not selection.conds:
                 selection.children[0].parent = selection.parent
@@ -78,7 +78,7 @@ class PushSelectionDownOptimizator(BaseOptimizator):
         return root
 
 
-class CrossJoinToThetaJoinOptimizator(BaseOptimizator):
+class CartesianProductToThetaJoinOptimizator(BaseOptimizator):
     """
     Notice: apply this after push selections down optimizator
     1. find selection
@@ -90,7 +90,7 @@ class CrossJoinToThetaJoinOptimizator(BaseOptimizator):
         def visit_selection(selection):
             if (selection.children
                     and len(selection.conds) == 1
-                    and isinstance(selection.children[0], algebra.CrossJoin)):
+                    and isinstance(selection.children[0], algebra.CartesianProduct)):
                 theta_join = algebra.ThetaJoin(selection.parent, selection.conds)
 
                 cross_join = selection.children[0]

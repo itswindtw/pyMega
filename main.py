@@ -25,7 +25,7 @@ class MainWindow(QWidget):
     # with importlib.import_module
     OPTIMIZATIONS = [
         ('Push selections down', 'PushSelectionDownOptimizator'),
-        ('Cartesian product to Join', 'CrossJoinToThetaJoinOptimizator')
+        ('Cartesian product to Join', 'CartesianProductToThetaJoinOptimizator')
     ]
 
     def __init__(self, schema):
@@ -118,7 +118,7 @@ class MainWindow(QWidget):
         result = executor.execute_plan(translated_tree)
 
         # show table_view for result, treeview for final tree, dialog for execution time
-        rw = ResultWindow(self, parsed_tree, result)
+        rw = ResultWindow(self, translated_tree, result)
         rw.show()
 
 class ResultWindow(QWidget):
@@ -128,7 +128,7 @@ class ResultWindow(QWidget):
 
         layout = QVBoxLayout(self)
         self.build_tree(tree)
-        self.build_tuples(tuples[0])
+        self.build_tuples(tuples)
 
         tree_view = QTreeView(self)
         tree_view.setModel(self.tree_model)
@@ -151,7 +151,7 @@ class ResultWindow(QWidget):
             return item
 
         self.tree_model = QStandardItemModel(self)
-        self.tree_model.setHorizontalHeaderLabels(['Algebra Tree'])
+        self.tree_model.setHorizontalHeaderLabels(['Evaluation Tree'])
         self.tree_model.appendRow(aux(tree))
 
     def build_tuples(self, tuples):

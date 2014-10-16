@@ -49,7 +49,7 @@ def parse_select(stmt):
 
 def parse_relations(parent, ids):
     def combine(x, y):
-        node = CrossJoin(None)
+        node = CartesianProduct(None)
         x.parent = node
         Relation(node, y)
         return node

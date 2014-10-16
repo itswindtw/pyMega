@@ -38,7 +38,7 @@ class Schema(object):
 
     def load_statistics(self):
         def extract_stat(relation):
-            tuples, _ = relation.get_tuples()
+            tuples = relation.get_tuples()
 
             total = len(tuples)
             distinct = {}
@@ -82,13 +82,13 @@ class Executor(object):
                 for c in node.children:
                     aux(selection, c)
                 return selection
-            elif isinstance(node, logical.CrossJoin):
-                join = plan.CrossJoin(parent)
+            elif isinstance(node, logical.CartesianProduct):
+                join = plan.CartesianProduct(parent)
                 for c in node.children:
                     aux(join, c)
                 return join
             elif isinstance(node, logical.ThetaJoin):
-                join = plan.ThetaJoin(parent, node.conds)
+                join = plan.NLJoin(parent, node.conds) # default is Nested loop join
                 for c in node.children:
                     aux(join, c)
                 return join
@@ -99,4 +99,4 @@ class Executor(object):
 
     def execute_plan(self, root):
         with root:
-            return root.get_tuples()
+            return root.run()
