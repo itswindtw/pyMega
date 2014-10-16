@@ -34,8 +34,7 @@ class Plan(object):
         self.close()
 
     def __str__(self):
-        return ("\t| Table size: %5d, Time comsumed: %.2f ms"
-                    % (self.table_size, self.time_duration * 1000.0))
+        raise NotImplementedError()
 
 class Relation(LeafNode, Plan):
     def __init__(self, parent, name, fields):
@@ -67,6 +66,9 @@ class Relation(LeafNode, Plan):
     def close(self):
         pass
 
+    def __str__(self):
+        return "Table Scan: %s" % self.name
+
 class Projection(TreeNode, Plan):
     def __init__(self, parent, fields):
         super(Projection, self).__init__(parent)
@@ -87,6 +89,12 @@ class Projection(TreeNode, Plan):
 
     def close(self):
         self.children[0].close()
+
+    def __str__(self):
+        if self.fields:
+            return "Projection: %s" % (','.join([str(f) for f in self.fields]))
+        else:
+            return "Projection: *"
 
 def eval_conds(tuple, conds):
     def extract_field(tuple, field):
@@ -136,6 +144,9 @@ class Selection(TreeNode, Plan):
     def close(self):
         self.children[0].close()
 
+    def __str__(self):
+        return "Selection: %s" % ('\nAND '.join([str(c) for c in self.conds]))
+
 def merge_tuples(p, q):
     return collections.OrderedDict(p.items() + q.items())
 
@@ -155,6 +166,8 @@ class CartesianProduct(TreeNode, Plan):
     def close(self):
         self.children[0].close()
 
+    def __str__(self):
+        return "CartesianProduct"
 
 class NLJoin(TreeNode, Plan):
     def __init__(self, parent, conds):
@@ -180,3 +193,6 @@ class NLJoin(TreeNode, Plan):
 
     def close(self):
         self.children[0].close()
+
+    def __str__(self):
+        return 'Nested Loop Join: %s' % (' AND '.join([str(c) for c in self.conds]))

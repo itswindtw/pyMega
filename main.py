@@ -132,6 +132,9 @@ class ResultWindow(QWidget):
 
         tree_view = QTreeView(self)
         tree_view.setModel(self.tree_model)
+        tree_view.header().setResizeMode(0, QHeaderView.ResizeToContents)
+        tree_view.header().setStretchLastSection(False)
+        tree_view.setStyleSheet('QStandardItem { font-weight: bold; };')
         layout.addWidget(tree_view)
 
         table_view = QTableView(self)
@@ -143,15 +146,17 @@ class ResultWindow(QWidget):
     def build_tree(self, tree):
         def aux(root):
             item = QStandardItem(str(root))
+            table_size = QStandardItem(str(root.table_size))
+            time_duration = QStandardItem("%.2f ms" % (root.time_duration * 1000.0))
 
             if isinstance(root, megadb.tree.TreeNode):
                 for c in root.children:
                     item.appendRow(aux(c))
 
-            return item
+            return [item, table_size, time_duration]
 
         self.tree_model = QStandardItemModel(self)
-        self.tree_model.setHorizontalHeaderLabels(['Evaluation Tree'])
+        self.tree_model.setHorizontalHeaderLabels(['Node', 'Table size', 'Time consumed'])
         self.tree_model.appendRow(aux(tree))
 
     def build_tuples(self, tuples):
