@@ -80,7 +80,7 @@ class PushSelectionDownOptimizator(BaseOptimizator):
 
 class CartesianProductToThetaJoinOptimizator(BaseOptimizator):
     """
-    Notice: apply this after push selections down optimizator
+    Notice: apply this after push selections down optimizator (or conds will be folded in join)
     1. find selection
     2. check that its child is cross join
     3. if yes: merge two node into one thetajoin
@@ -89,7 +89,6 @@ class CartesianProductToThetaJoinOptimizator(BaseOptimizator):
     def run(self, root):
         def visit_selection(selection):
             if (selection.children
-                    and len(selection.conds) == 1
                     and isinstance(selection.children[0], algebra.CartesianProduct)):
                 theta_join = algebra.ThetaJoin(selection.parent, selection.conds)
 
