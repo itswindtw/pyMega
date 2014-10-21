@@ -134,7 +134,6 @@ class ResultWindow(QWidget):
         tree_view.setModel(self.tree_model)
         tree_view.header().setResizeMode(0, QHeaderView.ResizeToContents)
         tree_view.header().setStretchLastSection(False)
-        tree_view.setStyleSheet('QStandardItem { font-weight: bold; };')
         layout.addWidget(tree_view)
 
         table_view = QTableView(self)
