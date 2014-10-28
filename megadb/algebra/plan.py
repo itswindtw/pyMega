@@ -90,3 +90,10 @@ class ThetaJoin(TreeNode):
 
     def __repr__(self):
         return "ThetaJoin: " + str(self.conds)
+
+class NaturalJoin(TreeNode):
+    def __init__(self, parent):
+        super(NaturalJoin, self).__init__(parent)
+
+    def __repr__(self):
+        return "NaturalJoin"

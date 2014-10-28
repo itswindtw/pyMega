@@ -1,3 +1,5 @@
+import copy
+
 import megadb.tree as tree
 import megadb.algebra as algebra
 
@@ -24,6 +26,32 @@ def collect_namespaces(node):
         for c in node.children:
             ns = ns | collect_namespaces(c)
         return ns
+
+def clone_tree(root):
+    node = copy.deepcopy(root)
+    return node
+
+def clone_partial_tree(node):
+    if node.parent is None:
+        return None
+    else:
+        old_children = node.parent.children
+        new_children = [c for c in old_children if c is not node]
+
+        node.parent.children = new_children
+        new_parent = copy.deepcopy(node.parent)
+        node.parent.children = old_children
+
+        parent_of_new_parent = clone_partial_tree(new_parent)
+        if parent_of_new_parent is not None:
+            new_parent.parent = parent_of_new_parent
+
+        return new_parent
+
+def enumerate_join_order(root):
+    def enumerate_swaps(lc, rc):
+        pass
+    pass
 
 class PushSelectionDownOptimizator(BaseOptimizator):
     """
@@ -83,22 +111,36 @@ class CartesianProductToThetaJoinOptimizator(BaseOptimizator):
     Notice: apply this after push selections down optimizator (or conds will be folded in join)
     1. find selection
     2. check that its child is cross join
-    3. if yes: merge two node into one thetajoin
+    3. if yes: merge two node into one thetajoin or natrualjoin
     """
 
     def run(self, root):
+        def can_do_natural_join(selection, cross_children):
+            for cond in selection.conds:
+                if not isinstance(cond.x, algebra.Field) or not isinstance(cond.y, algebra.Field):
+                    return False
+                if cond.x.name != cond.y.name:
+                    return False
+
+            return True
+
         def visit_selection(selection):
             if (selection.children
                     and isinstance(selection.children[0], algebra.CartesianProduct)):
-                theta_join = algebra.ThetaJoin(selection.parent, selection.conds)
 
                 cross_join = selection.children[0]
+
+                if can_do_natural_join(selection, cross_join.children):
+                    join = algebra.NaturalJoin(selection.parent)
+                else:
+                    join = algebra.ThetaJoin(selection.parent, selection.conds)
+
                 for c in cross_join.children[:]:
-                    c.parent = theta_join
+                    c.parent = join
 
                 selection.parent = None
 
-                tree_traverse(theta_join, algebra.Selection, visit_selection)
+                tree_traverse(join, algebra.Selection, visit_selection)
 
         tree_traverse(root, algebra.Selection, visit_selection)
         return root
@@ -113,3 +155,5 @@ class PushProjectionDownOptimizator(BaseOptimizator):
 class CostBasedOptimizator(BaseOptimizator):
     def __init__(self, schema):
         self.schema = schema
+
+
