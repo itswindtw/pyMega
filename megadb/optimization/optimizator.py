@@ -18,6 +18,17 @@ def tree_traverse(root, type, visit):
     for c in children:
         tree_traverse(c, type, visit)
 
+def tree_traverse_first(root, type, visit):
+    children = root.children[:] if isinstance(root, tree.TreeNode) else []
+
+    if isinstance(root, type):
+        visit(root)
+        return True
+
+    for c in children:
+        if tree_traverse_first(c, type, visit):
+            return
+
 def collect_namespaces(node):
     if isinstance(node, algebra.Relation):
         return set([str(node.name)])
@@ -55,9 +66,10 @@ def find_root(node):
     return node
 
 def enumerate_join_orders(root):
-    swaps = [clone_tree(root)]
+    swaps = []
 
     def enumerate_join_order(node):
+        # swaps.append(find_root(node))
         lc, rc = node.children
         enumerate_swaps((0, lc, rc))
 
@@ -75,8 +87,8 @@ def enumerate_join_orders(root):
         for i in range(2):
             parent_tree = clone_partial_tree(rc)
             new_rc = clone_tree(rc)
-
             new_lc = parent_tree.children[0]
+
             j = depth
             while j > 0:
                 if isinstance(new_lc.children[0], algebra.NaturalJoin):
@@ -87,6 +99,9 @@ def enumerate_join_orders(root):
 
             # we only consider left-deep tree
             if isinstance(new_lc.children[i], algebra.NaturalJoin):
+                # new_lc_lc = new_lc.children[i]
+                # enumerate_swaps((depth+1, new_lc_lc.children[0], new_rc))
+                # enumerate_swaps((depth+1, new_lc_lc.children[1], new_rc))
                 continue
 
             new_lc.children[i].parent = parent_tree
@@ -96,10 +111,12 @@ def enumerate_join_orders(root):
 
             enumerate_join_order(parent_tree.children[0])
 
+        swaps.append(find_root(rc))
+        enumerate_join_order(lc)
         enumerate_swaps((depth+1, lc.children[0], rc))
         enumerate_swaps((depth+1, lc.children[1], rc))
 
-    tree_traverse(root, algebra.NaturalJoin, enumerate_join_order)
+    tree_traverse_first(root, algebra.NaturalJoin, enumerate_join_order)
     return swaps
 
 class PushSelectionDownOptimizator(BaseOptimizator):
