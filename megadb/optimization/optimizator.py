@@ -48,10 +48,59 @@ def clone_partial_tree(node):
 
         return new_parent
 
-def enumerate_join_order(root):
-    def enumerate_swaps(lc, rc):
-        pass
-    pass
+def find_root(node):
+    while node.parent:
+        node = node.parent
+
+    return node
+
+def enumerate_join_orders(root):
+    swaps = [clone_tree(root)]
+
+    def enumerate_join_order(node):
+        lc, rc = node.children
+        enumerate_swaps((0, lc, rc))
+
+    def enumerate_swaps(nodes):
+        depth, lc, rc = nodes
+
+        if (not isinstance(lc, algebra.NaturalJoin) and
+            not isinstance(rc, algebra.NaturalJoin)):
+            return
+
+        if isinstance(rc, algebra.NaturalJoin):
+            rc, lc = lc, rc
+
+        # RC swap with LC.LC and LC.RC
+        for i in range(2):
+            parent_tree = clone_partial_tree(rc)
+            new_rc = clone_tree(rc)
+
+            new_lc = parent_tree.children[0]
+            j = depth
+            while j > 0:
+                if isinstance(new_lc.children[0], algebra.NaturalJoin):
+                    new_lc = new_lc.children[0]
+                else:
+                    new_lc = new_lc.children[1]
+                j -= 1
+
+            # we only consider left-deep tree
+            if isinstance(new_lc.children[i], algebra.NaturalJoin):
+                continue
+
+            new_lc.children[i].parent = parent_tree
+            new_rc.parent = new_lc
+
+            swaps.append(find_root(parent_tree))
+
+            enumerate_join_order(parent_tree.children[0])
+
+        enumerate_swaps((depth+1, lc.children[0], rc))
+        enumerate_swaps((depth+1, lc.children[1], rc))
+
+    tree_traverse(root, algebra.NaturalJoin, enumerate_join_order)
+    return swaps
 
 class PushSelectionDownOptimizator(BaseOptimizator):
     """

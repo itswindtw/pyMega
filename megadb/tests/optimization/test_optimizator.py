@@ -40,6 +40,23 @@ class CartesianProductToThetaJoinOptimizatorTestCase(unittest.TestCase):
 
         print_parse_tree(join_opt.run(push_opt.run(tree)))
 
+class JoinOrderTestCase(unittest.TestCase):
+    def test_enumerate_join_orders(self):
+        tree = parse_sql("SELECT * FROM Professor, Course, Grade, Student WHERE \
+            Grade.StudentID = Student.StudentID AND Grade.CourseID = Course.CourseID AND Course.ProfessorID = Professor.ProfessorID")
+            # Student.GraduationYear = 2005 AND Course.Department = 'ECE' AND Professor.Department = 'CS'")
+        push_opt = PushSelectionDownOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator()
+        tree = join_opt.run(push_opt.run(tree))
+
+        print "Join Order Enumeration:"
+        print_parse_tree(tree)
+        results = enumerate_join_orders(tree)
+
+        for idx, t in enumerate(results):
+            print "%d: " % (idx+1)
+            print_parse_tree(t)
+
 
 class HelperTestCase(unittest.TestCase):
     def test_clone_tree(self):
