@@ -16,7 +16,7 @@ class SchemaTestCase(unittest.TestCase):
         schema.load()
         schema.load_statistics()
 
-        print schema.stats
+        print repr(schema.stats)
 
 class ExecutorTestCase(unittest.TestCase):
     def setUp(self):
