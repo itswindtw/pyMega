@@ -281,7 +281,13 @@ class PushSelectionDownOptimizator(BaseOptimizator):
         return root
 
 
-class CartesianProductToThetaJoinOptimizator(BaseOptimizator):
+#########
+
+class CostBasedOptimizator(BaseOptimizator):
+    def __init__(self, stats):
+        self.stats = stats
+
+class CartesianProductToThetaJoinOptimizator(CostBasedOptimizator):
     """
     Notice: apply this after push selections down optimizator (or conds will be folded in join)
     1. find selection
@@ -290,14 +296,33 @@ class CartesianProductToThetaJoinOptimizator(BaseOptimizator):
     """
 
     def run(self, root):
+        def extract_fields(node):
+            if isinstance(node, algebra.Relation):
+                fnames = self.stats[str(node.name)][1].keys()
+                fields = map(lambda x: algebra.Field.from_components(x, str(node.name)), fnames)
+                return set(fields)
+            elif isinstance(node, algebra.Selection):
+                return extract_fields(node.children[0])
+            elif isinstance(node, algebra.CartesianProduct):
+                return extract_fields(node.children[0]) | extract_fields(node.children[1])
+            else:
+                raise NotImplementedError()
+
         def can_do_natural_join(conds, cross_children):
+            fs_left, fs_right = map(extract_fields, cross_children)
+            fns_left  = {x.name for x in fs_left}
+            fns_right = {x.name for x in fs_right}
+            common_attrs = fns_left & fns_right
+
+            join_attrs = set()
             for cond in conds:
                 if not isinstance(cond.x, algebra.Field) or not isinstance(cond.y, algebra.Field):
                     return False
                 if cond.x.name != cond.y.name:
                     return False
+                join_attrs.add(cond.x.name)
 
-            return True
+            return common_attrs == join_attrs
 
         def visit_selection(selection):
             if (selection.children
@@ -327,12 +352,6 @@ class CartesianProductToThetaJoinOptimizator(BaseOptimizator):
 
         tree_traverse(root, algebra.Selection, visit_selection)
         return root
-
-#########
-
-class CostBasedOptimizator(BaseOptimizator):
-    def __init__(self, stats):
-        self.stats = stats
 
 class GreedyJoinOrderOptimizator(CostBasedOptimizator):
     """

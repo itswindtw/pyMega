@@ -20,37 +20,110 @@ class PushSelectionDownOptimizatorTestCase(unittest.TestCase):
 
 
 class CartesianProductToThetaJoinOptimizatorTestCase(unittest.TestCase):
+    def test_easy_1(self):
+        tree = parse_sql("SELECT * FROM A, B, C WHERE A.b = B.b AND B.c = C.c AND A.a = C.a")
+
+        test_stats = {
+            'A': [1, {'a': 1, 'b': 1}],
+            'B': [1, {'b': 1, 'c': 1}],
+            'C': [1, {'c': 1, 'a': 1}]
+        }
+
+        push_opt = PushSelectionDownOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
+
+        print_parse_tree(join_opt.run(push_opt.run(tree)))
+
+    def test_easy_2(self):
+        tree = parse_sql("SELECT * FROM B, C, A WHERE A.b = B.b AND A.a = C.a")
+
+        test_stats = {
+            'A': [1, {'a': 1, 'b': 1}],
+            'B': [1, {'b': 1, 'c': 1}],
+            'C': [1, {'a': 1}]
+        }
+
+        push_opt = PushSelectionDownOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
+
+        print_parse_tree(join_opt.run(push_opt.run(tree)))
+
+
     def test_complex(self):
         tree = parse_sql("SELECT * FROM Professor, Course, Grade, Student  WHERE \
             Student.GraduationYear = 2005 AND Course.Department = 'ECE' AND Professor.Department = 'CS' \
             Grade.CourseID = Course.ID AND Course.ProfessorID = Professor.ID AND Grade.StudentID = Student.ID")
 
+        test_stats = {
+            'Student':      [1000, {'GraduationYear': 100, 'ID': 100}],
+            'Course':       [1000, {'Department': 100, 'ProfessorID': 100}],
+            'Professor':    [ 100, {'Department': 100, 'ID':  10}],
+            'Grade':        [ 100, {'CourseID':  10, 'StudentID': 100}]
+        }
+
         push_opt = PushSelectionDownOptimizator()
-        join_opt = CartesianProductToThetaJoinOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
 
         print_parse_tree(join_opt.run(push_opt.run(tree)))
 
     def test_natural_join(self):
         tree = parse_sql("SELECT * FROM Professor, Course, Grade, Student WHERE \
-            Grade.StudentID = Student.StudentID AND Grade.CourseID = Course.CourseID AND Course.ProfessorID = Professor.ProfessorID AND \
+            Grade.StudentID = Student.StudentID AND Grade.CourseID = Course.CourseID AND Course.ProfessorID = Professor.ProfessorID AND Course.Department = Professor.Department AND \
             Student.GraduationYear = 2005 AND Course.Department = 'ECE' AND Professor.Department = 'CS'")
 
+        test_stats = {
+            'Student':      [1000, {'GraduationYear': 100, 'StudentID': 100}],
+            'Course':       [1000, {'Department': 100, 'CourseID': 3, 'ProfessorID': 100}],
+            'Professor':    [ 100, {'Department': 100, 'ProfessorID':  10}],
+            'Grade':        [ 100, {'CourseID':  10, 'StudentID': 100}]
+        }
+
         push_opt = PushSelectionDownOptimizator()
-        join_opt = CartesianProductToThetaJoinOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
 
         print_parse_tree(join_opt.run(push_opt.run(tree)))
 
 class JoinOrderTestCase(unittest.TestCase):
-    def test_enumerate_join_orders(self):
-        tree = parse_sql("SELECT * FROM Professor, Course, Grade, Student, Test WHERE \
-            Grade.StudentID = Student.StudentID AND Grade.CourseID = Course.CourseID AND Course.ProfessorID = Professor.ProfessorID AND Test.TestID = Couse.TestID")
-            # Student.GraduationYear = 2005 AND Course.Department = 'ECE' AND Professor.Department = 'CS'")
+    def test_simple_case(self):
+        tree = parse_sql("SELECT * FROM A, B, C WHERE A.b = B.b AND A.a = C.a")
+
+        test_stats = {
+            'A': [1, {'a': 1, 'b': 1}],
+            'B': [1, {'b': 1, 'c': 1}],
+            'C': [1, {'a': 1}]
+        }
+
         push_opt = PushSelectionDownOptimizator()
-        join_opt = CartesianProductToThetaJoinOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
         tree = join_opt.run(push_opt.run(tree))
 
         print "Join Order Enumeration:"
-        # print_parse_tree(tree)
+        print_parse_tree(tree)
+        results = enumerate_join_orders(tree)
+
+        for idx, t in enumerate(results):
+            print "%d: " % (idx+1)
+            print_parse_tree(t)
+
+    def test_enumerate_join_orders(self):
+        tree = parse_sql("SELECT * FROM Professor, Course, Grade, Student, Test WHERE \
+            Grade.StudentID = Student.StudentID AND Grade.CourseID = Course.CourseID AND Course.ProfessorID = Professor.ProfessorID AND Test.TestID = Course.TestID")
+            # Student.GraduationYear = 2005 AND Course.Department = 'ECE' AND Professor.Department = 'CS'")
+
+        test_stats = {
+            'Student':      [1000, {'GraduationYear': 100, 'StudentID': 100}],
+            'Course':       [1000, {'Department': 100, 'ProfessorID': 100, 'TestID': 3}],
+            'Professor':    [ 100, {'Department': 100, 'ProfessorID':  10}],
+            'Grade':        [ 100, {'CourseID':  10, 'StudentID': 100}],
+            'Test':         [ 100, {'TestID': 1}]
+        }
+
+        push_opt = PushSelectionDownOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
+        tree = join_opt.run(push_opt.run(tree))
+
+        print "Join Order Enumeration:"
+        print_parse_tree(tree)
         results = enumerate_join_orders(tree)
 
         for idx, t in enumerate(results):
@@ -81,20 +154,20 @@ class GreedyJoinOrderOptimizatorTestCase(unittest.TestCase):
 
         print_parse_tree(tree)
 
-        push_opt = PushSelectionDownOptimizator()
-        join_opt = CartesianProductToThetaJoinOptimizator()
-
-        tree = push_opt.run(tree)
-        # print_parse_tree(tree)
-        tree = join_opt.run(tree)
-        # print_parse_tree(tree)
-
         test_stats = {
             'R': [1000, {'a': 100, 'b': 100}],
             'U': [1000, {'a': 100, 'd': 100}],
             'S': [ 100, {'b': 100, 'c':  10}],
             'T': [ 100, {'c':  10, 'd': 100}]
         }
+
+        push_opt = PushSelectionDownOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
+
+        tree = push_opt.run(tree)
+        # print_parse_tree(tree)
+        tree = join_opt.run(tree)
+        # print_parse_tree(tree)
 
         print "GreedyJoinOrder: "
         greedy_opt = GreedyJoinOrderOptimizator(test_stats)
