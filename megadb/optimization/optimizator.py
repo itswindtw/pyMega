@@ -222,7 +222,7 @@ def enumerate_selections(root):
 
         enums = next_results
 
-    return enums
+    return enums or [root]
 
 class PushSelectionDownOptimizator(BaseOptimizator):
     """
@@ -378,20 +378,19 @@ class GreedyJoinOrderOptimizator(CostBasedOptimizator):
 
         def estimate_cost(p, q):
             p_stat, q_stat = p[1], q[1]
+            new_table_size = float(p_stat[0] * q_stat[0])
             new_value_set = dict(p_stat[1].items() + q_stat[1].items())
 
             common_attrs = (set(p_stat[1]) & set(q_stat[1]))
-            if not common_attrs:
+            # if not common_attrs:
                 # equal to Cartesian product
-                return [p_stat[0] * q_stat[0], new_value_set]
+                # return [p_stat[0] * q_stat[0], new_value_set]
 
-            common_attr = common_attrs.pop()
+            for common_attr in common_attrs:
+                new_table_size /= max(p_stat[1][common_attr], q_stat[1][common_attr])
+                new_value_set[common_attr] = min(p_stat[1][common_attr], q_stat[1][common_attr])
 
-            new_value_set[common_attr] = min(p_stat[1][common_attr], q_stat[1][common_attr])
-            return [
-                (p_stat[0] * q_stat[0]) / max(p_stat[1][common_attr], q_stat[1][common_attr]),
-                new_value_set
-            ]
+            return [new_table_size, new_value_set]
 
         def visit_join(join):
             participants = extract_join_order(join)
@@ -422,4 +421,56 @@ class GreedyJoinOrderOptimizator(CostBasedOptimizator):
 
         tree_traverse_first(root, algebra.NaturalJoin, visit_join)
         return root
+
+
+# contributed by Ray Chien
+class EnumerationBasedOptimizator(CostBasedOptimizator):
+    def run(self, root):
+        def cost(node, cost_list):
+            if isinstance(node, algebra.Relation):
+                return copy.copy(self.stats[str(node.name)])
+            elif isinstance(node, algebra.Projection):
+                return cost(node.children[0], cost_list)
+            elif isinstance(node, algebra.Selection): # T(S) = T(R) / V(R, a)
+                child = cost(node.children[0], cost_list)
+                cond = node.conds[0]
+                attr_name = cond.x.name if isinstance(cond.x, algebra.Field) else cond.y.name
+
+                var = child[1][attr_name]
+                new_t = float(child[0]) / var
+                cost_list.append(new_t)
+                return [new_t, child[1]]
+            else: # T(R) * T(S) / max(V(R, a), V(S, a))
+                child_r = cost(node.children[0], cost_list)
+                child_s = cost(node.children[1], cost_list)
+
+                new_t = float(child_r[0] * child_s[0])
+                new_v = dict(child_r[1].items() + child_s[1].items())
+
+                common_attrs = set(child_r[1]) & set(child_s[1])
+                for common_attr in common_attrs:
+                    new_t /= max(child_r[1][common_attr], child_s[1][common_attr])
+
+                cost_list.append(new_t)
+                return [new_t, new_v]
+
+        def find_optimized_tree(root, enumerator):
+            optimized_tree = None
+            smallest_cost = float('inf')
+
+            possible_trees = enumerator(root)
+            for tree in possible_trees:
+                cost_list = []
+                tree_cost = cost(tree, cost_list)
+                total_cost = sum(cost_list)
+
+                if total_cost < smallest_cost:
+                    smallest_cost = total_cost
+                    optimized_tree = tree
+
+            return optimized_tree
+
+        best_selection_tree = find_optimized_tree(root, enumerate_selections)
+        best_join_order_tree = find_optimized_tree(best_selection_tree, enumerate_join_orders)
+        return best_join_order_tree
 

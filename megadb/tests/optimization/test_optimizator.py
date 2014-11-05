@@ -173,6 +173,60 @@ class GreedyJoinOrderOptimizatorTestCase(unittest.TestCase):
         greedy_opt = GreedyJoinOrderOptimizator(test_stats)
         print_parse_tree(greedy_opt.run(tree))
 
+class EnumerationBasedOptimizatorTestCase(unittest.TestCase):
+    def test_easy(self):
+        tree = parse_sql("SELECT * FROM R, S, T, U WHERE \
+            R.b = S.b AND S.c = T.c AND T.d = U.d AND U.a = R.a")
+
+        print_parse_tree(tree)
+
+        test_stats = {
+            'R': [1000, {'a': 100, 'b': 100}],
+            'U': [1000, {'a': 100, 'd': 100}],
+            'S': [ 100, {'b': 100, 'c':  10}],
+            'T': [ 100, {'c':  10, 'd': 100}]
+        }
+
+        push_opt = PushSelectionDownOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
+
+        tree = push_opt.run(tree)
+        # print_parse_tree(tree)
+        tree = join_opt.run(tree)
+        # print_parse_tree(tree)
+
+        print "JoinOrderEnumeration: "
+        greedy_opt = EnumerationBasedOptimizator(test_stats)
+        print_parse_tree(greedy_opt.run(tree))
+
+    def test_easy_with_selectivity(self):
+        tree = parse_sql("SELECT * FROM R, S, T, U WHERE \
+            R.a = 3 AND S.b = 5 AND S.c = 1 AND \
+            R.b = S.b AND S.c = T.c AND T.d = U.d AND U.a = R.a")
+
+        print_parse_tree(tree)
+
+        test_stats = {
+            'R': [1000, {'a': 100, 'b': 100}],
+            'U': [1000, {'a': 100, 'd': 100}],
+            'S': [ 100, {'b': 100, 'c':  10}],
+            'T': [ 100, {'c':  10, 'd': 100}]
+        }
+
+        push_opt = PushSelectionDownOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
+
+        tree = push_opt.run(tree)
+        # print_parse_tree(tree)
+        tree = join_opt.run(tree)
+        # print_parse_tree(tree)
+
+        print "JoinOrderEnumeration: "
+        greedy_opt = EnumerationBasedOptimizator(test_stats)
+        print_parse_tree(greedy_opt.run(tree))
+
+
+
 class HelperTestCase(unittest.TestCase):
     def test_clone_tree(self):
         tree = parse_sql("SELECT * FROM R, S, T WHERE R.a = S.a AND S.t = T.t AND R.a = 8")
