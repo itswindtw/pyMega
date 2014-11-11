@@ -68,6 +68,17 @@ class Executor(object):
 
     def translate_tree(self, root):
         """Translate a logical plan tree into execution tree"""
+        def extract_fields(node):
+            if isinstance(node, logical.Relation):
+                fnames = self.schema.stats[str(node.name)][1].keys()
+                fields = map(lambda x: logical.Field.from_components(x, str(node.name)), fnames)
+                return set(fields)
+            elif isinstance(node, logical.Selection):
+                return extract_fields(node.children[0])
+            elif isinstance(node, logical.CartesianProduct) or isinstance(node, logical.NaturalJoin):
+                return extract_fields(node.children[0]) | extract_fields(node.children[1])
+            else:
+                raise NotImplementedError()
 
         def aux(parent, node):
             if isinstance(node, logical.Relation):
@@ -92,6 +103,22 @@ class Executor(object):
                 for c in node.children:
                     aux(join, c)
                 return join
+            elif isinstance(node, logical.NaturalJoin):
+                fs_left, fs_right = map(extract_fields, node.children)
+                fns_left = {x.name for x in fs_left}
+                fns_right = {x.name for x in fs_right}
+                # common_attr_names = fns_left & fns_right
+
+                conds = []
+                for f_left in fs_left:
+                    for f_right in fs_right:
+                        if f_left.name == f_right.name:
+                            conds.append(Comparison(f_left, f_right, '='))
+                            break
+
+                join = plan.NLJoin(parent, conds)
+                for c in node.children:
+                    aux(join, c)
             else:
                 raise NotImplementedError()
 
