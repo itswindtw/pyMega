@@ -1,1 +1,1 @@
-from plan import *
+from megadb.algebra.plan import *
