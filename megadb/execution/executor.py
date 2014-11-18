@@ -71,11 +71,8 @@ class Executor(object):
         """Translate a logical plan tree into execution tree"""
         def extract_fields(node):
             if isinstance(node, logical.Relation):
-                def build_field(fname):
-                    return logical.Field.from_components(fname, str(node.name))
-
                 fnames = self.schema.stats[str(node.name)][1].keys()
-                fields = [build_field(fname) for fname in fnames]
+                fields = map(lambda x: logical.Field.from_components(x, str(node.name)), fnames)
                 return set(fields)
             elif isinstance(node, logical.Selection):
                 return extract_fields(node.children[0])
@@ -108,7 +105,7 @@ class Executor(object):
                     aux(join, c)
                 return join
             elif isinstance(node, logical.NaturalJoin):
-                fs_left, fs_right = [extract_fields(c) for c in node.children]
+                fs_left, fs_right = map(extract_fields, node.children)
                 # fns_left = {x.name for x in fs_left}
                 # fns_right = {x.name for x in fs_right}
                 # common_attr_names = fns_left & fns_right
