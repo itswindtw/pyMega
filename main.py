@@ -1,14 +1,15 @@
-# This is GUI for our query processor
-#
-#   Load necessary components
-#   Accept user input
-#   Process the query, and output result
-#
-#   Test Cases:
-#   SELECT * FROM Students WHERE Students.gender = 'M' AND Students.degree = 'Master'
-#   SELECT Students.name, Students.id FROM Students, Grades, Courses WHERE Grades.stu_id = Students.id AND Grades.course_id = Courses.id AND Grades.grade = 'A'
-#
-#   TODO: refactor it!
+"""This is GUI for our query processor
+
+Behaviors:
+    Load necessary components
+    Accept user input
+    Process the query and output result
+
+Test cases:
+    SELECT * FROM Students WHERE Students.gender = 'M' AND Students.degree = 'Master'
+    SELECT Students.name, Students.id FROM Students, Grades, Courses WHERE Grades.stu_id = Students.id AND Grades.course_id = Courses.id AND Grades.grade = 'A'
+
+"""
 
 import sys
 import importlib
