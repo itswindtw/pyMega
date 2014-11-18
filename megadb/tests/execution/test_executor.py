@@ -2,7 +2,7 @@ import unittest
 from megadb.execution.executor import Schema, Executor
 from megadb.algebra.parser import parse_sql, print_parse_tree
 from megadb.execution.plan import *
-from megadb.algebra.plan import Comparison, Field
+from megadb.algebra.plan import Comparison, Field, NaturalJoin
 from megadb.optimization.optimizator import *
 
 class SchemaTestCase(unittest.TestCase):
@@ -52,10 +52,12 @@ class ExecutorTestCase(unittest.TestCase):
         self.assertEqual(parser_result[1], scratch_result[1])
 
     def test_translate_natural_joins(self):
-        tree = parse_sql("SELECT * FROM Alpha, Beta WHERE Alpha.a = Beta.a")
+        tree = parse_sql("SELECT * FROM Alpha, Beta WHERE Alpha.c = Beta.c")
         push_opt = PushSelectionDownOptimizator()
         join_opt = CartesianProductToThetaJoinOptimizator(self.executor.schema.stats)
         tree = join_opt.run(push_opt.run(tree))
+
+        self.assertTrue(isinstance(tree.children[0], NaturalJoin))
 
         translated = self.executor.translate_tree(tree)
         print_parse_tree(translated)

@@ -12,7 +12,7 @@ class Schema(object):
         self.stats = {}
 
     def load(self):
-        pattern = re.compile('^(\w+)\((.*)\)$')
+        pattern = re.compile(r'^(\w+)\((.*)\)$')
 
         def wrapped_field(field):
             # [abc, STR] -> [abc, type<str>]
@@ -22,12 +22,13 @@ class Schema(object):
             match = pattern.search(line)
             if match is None:
                 print "Can't parse {0}".format(line)
-                return
+                return (None, None)
 
             rname = match.group(1)
-            fields = [wrapped_field(f.split(':')) for f in match.group(2).split(',')]
+            fields = match.group(2).split(',')
+            fields = [wrapped_field(f.split(':')) for f in fields]
 
-            return rname, fields
+            return (rname, fields)
 
         path = os.path.join(settings.RELATIONS_PATH, 'Schema')
         with open(path, 'r') as f:
@@ -47,8 +48,8 @@ class Schema(object):
                 values = set()
                 field = logical.Field.from_components(fname, relation.name)
 
-                for tuple in tuples:
-                    value = tuple[field]
+                for t in tuples:
+                    value = t[field]
                     values.add(value)
 
                 distinct[fname] = len(values)
@@ -70,8 +71,11 @@ class Executor(object):
         """Translate a logical plan tree into execution tree"""
         def extract_fields(node):
             if isinstance(node, logical.Relation):
+                def build_field(fname):
+                    return logical.Field.from_components(fname, str(node.name))
+
                 fnames = self.schema.stats[str(node.name)][1].keys()
-                fields = map(lambda x: logical.Field.from_components(x, str(node.name)), fnames)
+                fields = [build_field(fname) for fname in fnames]
                 return set(fields)
             elif isinstance(node, logical.Selection):
                 return extract_fields(node.children[0])
@@ -104,16 +108,16 @@ class Executor(object):
                     aux(join, c)
                 return join
             elif isinstance(node, logical.NaturalJoin):
-                fs_left, fs_right = map(extract_fields, node.children)
-                fns_left = {x.name for x in fs_left}
-                fns_right = {x.name for x in fs_right}
+                fs_left, fs_right = [extract_fields(c) for c in node.children]
+                # fns_left = {x.name for x in fs_left}
+                # fns_right = {x.name for x in fs_right}
                 # common_attr_names = fns_left & fns_right
 
                 conds = []
                 for f_left in fs_left:
                     for f_right in fs_right:
                         if f_left.name == f_right.name:
-                            conds.append(Comparison(f_left, f_right, '='))
+                            conds.append(logical.Comparison(f_left, f_right, '='))
                             break
 
                 join = plan.NLJoin(parent, conds)

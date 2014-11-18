@@ -1,2 +1,2 @@
-Alpha(a1:INT,a2:STR)
-Beta(b1:INT,b2:STR)
+Alpha(a1:INT,a2:STR,c:STR)
+Beta(b1:INT,b2:STR,c:STR)
