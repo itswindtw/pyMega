@@ -75,7 +75,7 @@ class Projection(TreeNode, Plan):
         self.fields = fields
 
     def open(self):
-        assert(len(self.children) == 1)
+        assert len(self.children) == 1
         self.children[0].open()
 
     def get_tuples(self):
@@ -84,7 +84,7 @@ class Projection(TreeNode, Plan):
         if len(self.fields) == 0:
             return [list(tuple.iteritems()) for tuple in tuples]
         else:
-            return [ [(k, v) for (k, v) in tuple.iteritems() if k in self.fields]
+            return [[(k, v) for (k, v) in tuple.iteritems() if k in self.fields]
                     for tuple in tuples]
 
     def close(self):
@@ -133,7 +133,7 @@ class Selection(TreeNode, Plan):
         self.conds = conds
 
     def open(self):
-        assert(len(self.children) == 1)
+        assert len(self.children) == 1
         self.children[0].open()
 
     def get_tuples(self):
@@ -155,7 +155,7 @@ class CartesianProduct(TreeNode, Plan):
         super(CartesianProduct, self).__init__(parent)
 
     def open(self):
-        assert(len(self.children) == 2)
+        assert len(self.children) == 2
         self.children[0].open()
 
     def get_tuples(self):
@@ -175,7 +175,7 @@ class NLJoin(TreeNode, Plan):
         self.conds = conds
 
     def open(self):
-        assert(len(self.children) == 2)
+        assert len(self.children) == 2
         self.children[0].open()
 
     def get_tuples(self):
