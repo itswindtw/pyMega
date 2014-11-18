@@ -68,19 +68,19 @@ def find_root(node):
     return node
 
 def extract_join_order(node):
-        if not isinstance(node, algebra.NaturalJoin):
-            return []
+    if not isinstance(node, algebra.NaturalJoin):
+        return []
 
-        lc, rc = node.children
-        if isinstance(rc, algebra.NaturalJoin):
-            rc, lc = lc, rc
+    lc, rc = node.children
+    if isinstance(rc, algebra.NaturalJoin):
+        rc, lc = lc, rc
 
-        if isinstance(lc, algebra.NaturalJoin):
-            participants = [rc]
-            participants.extend(extract_join_order(lc))
-            return participants
+    if isinstance(lc, algebra.NaturalJoin):
+        participants = [rc]
+        participants.extend(extract_join_order(lc))
+        return participants
 
-        return [lc, rc]
+    return [lc, rc]
 
 def enumerate_join_orders(root):
     def enumerate_join_order_left_deep(node):
@@ -267,7 +267,7 @@ class PushSelectionDownOptimizator(BaseOptimizator):
                     else:
                         new_conds.append(cond)
 
-                assert(len(selection.children) == 1)
+                assert len(selection.children) == 1
 
                 selection.conds = new_conds
 
@@ -310,7 +310,7 @@ class CartesianProductToThetaJoinOptimizator(CostBasedOptimizator):
 
         def can_do_natural_join(conds, cross_children):
             fs_left, fs_right = map(extract_fields, cross_children)
-            fns_left  = {x.name for x in fs_left}
+            fns_left = {x.name for x in fs_left}
             fns_right = {x.name for x in fs_right}
             common_attrs = fns_left & fns_right
 
@@ -461,7 +461,7 @@ class EnumerationBasedOptimizator(CostBasedOptimizator):
             possible_trees = enumerator(root)
             for tree in possible_trees:
                 cost_list = []
-                tree_cost = cost(tree, cost_list)
+                cost(tree, cost_list)
                 total_cost = sum(cost_list)
 
                 if total_cost < smallest_cost:

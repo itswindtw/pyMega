@@ -28,14 +28,20 @@ class ExecutorTestCase(unittest.TestCase):
         self.executor = Executor(schema)
 
     def test_translate_tree(self):
-        tree = parse_sql("SELECT * FROM Alpha WHERE a1 = 3")
+        stmt = "SELECT * FROM Alpha WHERE a1 = 3"
+        print stmt
+
+        tree = parse_sql(stmt)
         translated = self.executor.translate_tree(tree)
 
         print_parse_tree(translated)
 
     def test_simple_plan_execution(self):
+        stmt = "SELECT * FROM Alpha, Beta WHERE a1 = b1"
+        # print stmt
+
         # from parser
-        tree = parse_sql("SELECT * FROM Alpha, Beta WHERE a1 = b1")
+        tree = parse_sql(stmt)
         translated = self.executor.translate_tree(tree)
 
         # construct from scratch
@@ -52,7 +58,10 @@ class ExecutorTestCase(unittest.TestCase):
         self.assertEqual(parser_result[1], scratch_result[1])
 
     def test_translate_natural_joins(self):
-        tree = parse_sql("SELECT * FROM Alpha, Beta WHERE Alpha.c = Beta.c")
+        stmt = "SELECT * FROM Alpha, Beta WHERE Alpha.c = Beta.c"
+        print stmt
+
+        tree = parse_sql(stmt)
         push_opt = PushSelectionDownOptimizator()
         join_opt = CartesianProductToThetaJoinOptimizator(self.executor.schema.stats)
         tree = join_opt.run(push_opt.run(tree))
