@@ -88,7 +88,7 @@ class MainWindow(QWidget):
         def instantiate_optimizator(opt_name):
             cls = getattr(optimizator, opt_name)
             if issubclass(cls, optimizator.CostBasedOptimizator):
-                return cls(self.schema)
+                return cls(self.schema.stats)
             else:
                 return cls()
 
@@ -106,15 +106,16 @@ class MainWindow(QWidget):
         optimizators = [instantiate_optimizator(v[1][1]) for v in self._opts if v[0]]
 
         # parsing, optimizing and executing
-        try:
-            parsed_tree = parse_sql(query_text)
-            for opt in optimizators:
-                parsed_tree = opt.run(parsed_tree)
-            translated_tree = executor.translate_tree(parsed_tree)
-        except:
-            self._query_text.setProperty('class', 'invalid')
-            self.refresh_interface()
-            return
+        # try:
+        parsed_tree = parse_sql(query_text)
+        for opt in optimizators:
+            parsed_tree = opt.run(parsed_tree)
+        translated_tree = executor.translate_tree(parsed_tree)
+        # except:
+        #     print sys.exc_info()
+        #     self._query_text.setProperty('class', 'invalid')
+        #     self.refresh_interface()
+        #     return
 
         result = executor.execute_plan(translated_tree)
 
