@@ -643,7 +643,7 @@ class GreedyOptimizator(CostBasedOptimizator):
                         for eCond in self.forSelec:
                             if eCond.x.namespace == tmp1[0][0] and eCond.x.name == seleAttr:
                                 tNode = None
-                                tNode = algebra.Selection(newNode, eCond)
+                                tNode = algebra.Selection(newNode, [eCond])
                                 thisNode.parent = tNode
                                 thisNode = tNode
         #############################################
@@ -660,7 +660,7 @@ class GreedyOptimizator(CostBasedOptimizator):
                         for eCond in self.forSelec:
                             if eCond.x.namespace == tmp1[0][1] and eCond.x.name == seleAttr:
                                 tNode = None
-                                tNode = algebra.Selection(newNode, eCond)
+                                tNode = algebra.Selection(newNode, [eCond])
                                 thisNode.parent = tNode
                                 thisNode = tNode
         #############################################
