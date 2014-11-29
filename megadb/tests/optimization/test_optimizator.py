@@ -225,6 +225,34 @@ class EnumerationBasedOptimizatorTestCase(unittest.TestCase):
         greedy_opt = EnumerationBasedOptimizator(test_stats)
         print_parse_tree(greedy_opt.run(tree))
 
+class GreedyOptimizatorTestCase(unittest.TestCase):
+    def test_easy(self):
+        tree = parse_sql("SELECT title, a FROM StarsIn, Movies, MovieStars, Hello WHERE \
+            Hello.MovieYear = MovieStars.MovieYear AND Hello.StarName = MovieStars.StarName AND \
+            StarsIn.MovieName = Movies.MovieName AND \
+            MovieStars.StarName = StarsIn.StarName AND MovieStars.MovieYear = Movies.MovieYear AND \
+            Movies.MovieYear = 2008 AND Movies.MovieName = 'King Kong'")
+
+        print_parse_tree(tree)
+
+        test_stats = {
+            'StarsIn': [100, {'MovieName': 25, 'StarName': 10}],
+            'Movies': [150, {'MovieName': 50, 'MovieYear': 15}],
+            'MovieStars': [200, {'StarName': 20, 'MovieYear': 20}],
+            'Hello': [50, {'StarName': 30, 'MovieYear': 25}]
+        }
+
+        push_opt = PushSelectionDownOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
+
+        tree = push_opt.run(tree)
+        # print_parse_tree(tree)
+        tree = join_opt.run(tree)
+        print_parse_tree(tree)
+
+        print "GreedyOptimizator: "
+        greedy_opt = GreedyOptimizator(test_stats)
+        print_parse_tree(greedy_opt.run(tree))
 
 
 class HelperTestCase(unittest.TestCase):

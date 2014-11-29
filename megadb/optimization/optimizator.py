@@ -474,3 +474,241 @@ class EnumerationBasedOptimizator(CostBasedOptimizator):
         best_join_order_tree = find_optimized_tree(best_selection_tree, enumerate_join_orders)
         return best_join_order_tree
 
+# contributed by Jianqing Zhang and Jian Yuan
+class GreedyOptimizator(CostBasedOptimizator):
+    def run(self, root):
+        # order in statforS indicates the selection order
+        self.statforS = {}
+        self.statforJ = {}
+
+        self.projFields = []
+        self.relationTobeJoin = []
+        self.forSelec = []
+        self.cascadeSele = False
+
+        self.subTrees = {}
+
+        def Traverse(node):
+            # if node type is 'Projection', then record the fields to perform Projection
+            if isinstance(node, algebra.Projection):
+                self.projFields = node.fields
+            # record the relations to perform Natural Join
+            if isinstance(node, algebra.NaturalJoin):
+                if isinstance(node.children[0], algebra.Relation):
+                    self.relationTobeJoin.append(str(node.children[0].name))
+                    # set up a dictionary to store the statistics used for Natural Join
+                    self.statforJ[str(node.children[0].name)] = self.stats[str(node.children[0].name)]
+                elif isinstance(node.children[1], algebra.Relation):
+                    self.relationTobeJoin.append(str(node.children[1].name))
+                    # set up a dictionary to store the statistics used for Natural Join
+                    self.statforJ[str(node.children[0].name)] = self.stats[str(node.children[0].name)]
+
+            if isinstance(node, algebra.Selection):
+                rName = node.conds[0].x.namespace
+                attrName = node.conds[0].x.name
+                cond = node.conds[0]
+                # record the condition to perform Selection
+                self.forSelec.append(cond)
+
+                assert(self.stats.has_key(rName))
+                # set up a new dictionary to store statistics used for Selection only
+                if not self.statforS.has_key(rName):
+                    self.statforS[rName] = []
+                else:
+                    self.cascadeSele = True   # used to decide whether to determine Selection Order
+                T = self.stats[rName][0]  # number of tuples in Relation "rName"
+                newT = T / self.stats[rName][1][attrName]
+                assert(newT >= 1)
+                # temperary dictionary to store post selection statistics
+                tmp = {}
+                for eachAttr in self.stats[rName][1].keys():
+                    if eachAttr == attrName:
+                        newVar = 1
+                        tmp[eachAttr] = newVar
+                    else:
+                        # asumption that after selection, variance of other attributes won't change unless it's greater than the new T
+                        newVar = min(self.stats[rName][1][eachAttr], newT)
+                        tmp[eachAttr] = newVar
+                data = []
+                data.append(attrName)   # different from original statistics, used to tell the selection is performed on which attribute
+                data.append(newT)
+                data.append(tmp)
+                self.statforS[rName].append(data)
+                # also should update the dictionary of statistics for Natural Join
+                if not self.statforJ.has_key(rName):
+                    self.statforJ[rName] = []
+                    self.statforJ[rName].append(newT)
+                    self.statforJ[rName].append(tmp)
+                else:
+                    newStat = []
+                    newT = self.statforJ[rName][0] / self.statforJ[rName][1][attrName]  # cascade Selection
+                    assert(newT >= 1)
+                    tmp = {}
+                    for eachAttr in self.statforJ[rName][1].keys():
+                        if eachAttr == attrName:
+                            newVar = 1
+                            tmp[eachAttr] = newVar
+                        else:
+                            # asumption that after selection, variance of other attributes won't change unless it's greater than the new T
+                            newVar = min(self.statforJ[rName][1][eachAttr], newT)
+                            tmp[eachAttr] = newVar
+                    newStat.append(newT)
+                    newStat.append(tmp)
+                    self.statforJ[rName] = newStat
+
+            if isinstance(node, tree.LeafNode):
+                if isinstance(node.parent, algebra.Selection):
+                    self.relationTobeJoin.append(str(node.name))
+
+            if isinstance(node, tree.TreeNode):
+                for child in node.children:
+                    Traverse(child)
+        Traverse(root)
+
+        def SelectOrder():
+            if self.cascadeSele == False:
+                return
+            for each in self.statforS.keys():
+                # sort the statistic based on # of tuples to implement the select order
+                self.statforS[each] = sorted(self.statforS[each], key=lambda item: item[1])
+        SelectOrder()
+
+        def JoinOrder():
+            newNode = None
+            # if only two relations to be join, then no need to decide the join order
+            if len(self.relationTobeJoin) == 2:
+                # add the last relation into the joinOrder list
+                newNode = algebra.NaturalJoin(newNode)
+                newRName = self.relationTobeJoin[0] + ' ' + self.relationTobeJoin[1]
+                if self.relationTobeJoin[0].find(' ') == -1:
+                    algebra.Relation(newNode, self.relationTobeJoin[0])
+                    self.subTrees[self.relationTobeJoin[1]].parent = newNode
+                    del self.subTrees[self.relationTobeJoin[1]]
+                elif self.relationTobeJoin[1].find(' ') == -1:
+                    Relation(newNode, self.relationTobeJoin[1])
+                    self.subTrees[self.relationTobeJoin[0]].parent = newNode
+                    del self.subTrees[self.relationTobeJoin[0]]
+                else:
+                    self.subTrees[self.relationTobeJoin[0]].parent = newNode
+                    self.subTrees[self.relationTobeJoin[1]].parent = newNode
+                    del self.subTrees[self.relationTobeJoin[0]]
+                    del self.subTrees[self.relationTobeJoin[1]]
+                self.subTrees[newRName] = newNode
+                # Now subTrees dict should only have one entry
+                assert(len(self.subTrees) == 1)
+                return newNode
+            tmp1 = []    # tmp1 temperarily store the cost of all possible join pairs
+            # for each possible relation join pairs
+            for each in self.relationTobeJoin:
+                for another in self.relationTobeJoin:
+                    if self.relationTobeJoin.index(each) >= self.relationTobeJoin.index(another):
+                        continue
+                    else:
+                        # try to find if they have common attributes
+                        attr = None
+                        attrEach = set(self.statforJ[each][1].keys())
+                        attrAnot = set(self.statforJ[another][1].keys())
+                        attr = list(attrEach.intersection(attrAnot))
+
+                        numofAttr = len(attr)
+                        if numofAttr > 0:
+                            # calculate the cost of the join of these two relations
+                            T1 = self.statforJ[each][0]
+                            T2 = self.statforJ[another][0]
+                            cost = T1 * T2
+                            # if have multiple attributes in common
+                            for i in range(0, numofAttr):   # remember 'i' won't reach numofAttr
+                                cost = cost / max(self.statforJ[each][1][attr[i]], self.statforJ[another][1][attr[i]])
+                                if cost == 0:
+                                    cost = 1
+                            tmp2 = []          # tmp2 temperarily store the cost information of one possible join pair
+                            tmp2.append(each)
+                            tmp2.append(another)
+                            tmp2.append(cost)
+                            tmp1.append(tmp2)
+            # sort the list tmp1 based on the cost
+            # the first pair has the least cost
+            tmp1 = sorted(tmp1, key=lambda item: item[2])
+
+            # Construct the sub-tree using this least cost pair
+            newNode = algebra.NaturalJoin(newNode)
+            newRName = tmp1[0][0] + ' ' + tmp1[0][1]    # name of the post-join relation is indicated by the space in the name
+            if tmp1[0][0].find(' ') == -1:
+                thisNode = None
+                thisNode = algebra.Relation(newNode, tmp1[0][0])
+        #############################################           # add selection node
+                if tmp1[0][0] in self.statforS:
+                    for e in self.statforS[tmp1[0][0]]:
+                        seleAttr = e[0]
+                        for eCond in self.forSelec:
+                            if eCond.x.namespace == tmp1[0][0] and eCond.x.name == seleAttr:
+                                tNode = None
+                                tNode = algebra.Selection(newNode, eCond)
+                                thisNode.parent = tNode
+                                thisNode = tNode
+        #############################################
+            else:
+                self.subTrees[tmp1[0][0]].parent = newNode
+                del self.subTrees[tmp1[0][0]]
+            if tmp1[0][1].find(' ') == -1:
+                thisNode = None
+                thisNode = algebra.Relation(newNode, tmp1[0][1])
+        #############################################           # add selection node
+                if tmp1[0][1] in self.statforS:
+                    for e in self.statforS[tmp1[0][1]]:
+                        seleAttr = e[0]
+                        for eCond in self.forSelec:
+                            if eCond.x.namespace == tmp1[0][1] and eCond.x.name == seleAttr:
+                                tNode = None
+                                tNode = algebra.Selection(newNode, eCond)
+                                thisNode.parent = tNode
+                                thisNode = tNode
+        #############################################
+            else:
+                self.subTrees[tmp1[0][1]].parent = newNode
+                del self.subTrees[tmp1[0][1]]
+            # update the sub-tree dictionary
+            self.subTrees[newRName] = newNode
+            # update the statistic for join
+            newRSize = tmp1[0][2]
+            # add a new entry in the statforJ dictionary
+            self.statforJ[newRName] = []
+            self.statforJ[newRName].append(newRSize)
+            data = {}   # data dictionary to temperarily store the variance information of the new post-join relation
+            # determine the value of variance for each attribute of the new post-join relation
+            for attr in self.statforJ[tmp1[0][0]][1].keys():
+                if data.has_key(attr):
+                    if self.statforJ[tmp1[0][0]][1][attr] < data[attr]:
+                        data[attr] = self.statforJ[tmp1[0][0]][1][attr]
+                else:
+                    data[attr] = min(self.statforJ[tmp1[0][0]][1][attr], newRSize)
+            for attr in self.statforJ[tmp1[0][1]][1].keys():
+                if data.has_key(attr):
+                    if self.statforJ[tmp1[0][1]][1][attr] < data[attr]:
+                        data[attr] = self.statforJ[tmp1[0][1]][1][attr]
+                else:
+                    data[attr] = min(self.statforJ[tmp1[0][1]][1][attr], newRSize)
+            self.statforJ[newRName].append(data)
+            # delete the two entries for the relations been joined
+            del self.statforJ[tmp1[0][0]]
+            del self.statforJ[tmp1[0][1]]
+            # update relation to be join
+            self.relationTobeJoin.append(newRName)
+            self.relationTobeJoin.remove(tmp1[0][0])
+            self.relationTobeJoin.remove(tmp1[0][1])
+            # for the new relationTobeJoin and new statistic for join, continue to do JoinOrder()
+
+            newNode = JoinOrder()
+            return newNode
+
+        newTree = JoinOrder()
+
+        def AddProject(newTree):
+            newRoot = algebra.Projection(None, self.projFields)
+            newTree.parent = newRoot
+            return newRoot
+
+        newTree = AddProject(newTree)
+        return newTree
+
+
