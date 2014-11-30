@@ -13,3 +13,13 @@ Run tests
 
     $ cd pyMega
     $ python -m unittest discover -v
+
+
+Test schema
+-----------
+    Colleges - Programs ------- Students
+      |                             |
+      |                           Grades
+      |------- Courses -------\     |
+      |                         Sessions
+      |------- Professors-----/
