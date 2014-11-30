@@ -6,8 +6,8 @@ Behaviors:
     Process the query and output result
 
 Test cases:
-    SELECT * FROM Students WHERE Students.gender = 'M' AND Students.degree = 'Master'
-    SELECT Students.name, Students.id FROM Students, Grades, Courses WHERE Grades.stu_id = Students.id AND Grades.course_id = Courses.id AND Grades.grade = 'A'
+    SELECT * FROM Students WHERE Students.StudentGender = 'M' AND Students.StudentDegree = 'MS'
+    SELECT Students.StudentName, Students.StudentId FROM Students, Grades, Sessions WHERE Grades.StudentId = Students.StudentId AND Grades.SessionId = Sessions.SessionId AND Sessions.year = 2014 AND Grades.grade = 'A'
 
 """
 
@@ -26,7 +26,9 @@ class MainWindow(QWidget):
     # with importlib.import_module
     OPTIMIZATIONS = [
         ('Push selections down', 'PushSelectionDownOptimizator'),
-        ('Cartesian product to Join', 'CartesianProductToThetaJoinOptimizator')
+        ('Cartesian product to Join', 'CartesianProductToThetaJoinOptimizator'),
+        ('Enumeration-based optimization', 'EnumerationBasedOptimizator'),
+        ('Greedy-based optimization', 'GreedyOptimizator')
     ]
 
     def __init__(self, schema):
@@ -60,9 +62,9 @@ class MainWindow(QWidget):
             cb = QCheckBox(opt_name)
             cb.stateChanged.connect(lambda x, inx=inx: self.on_opt_changed(x, inx))
 
-            opts_layout.addWidget(cb, row, inx % 3)
+            opts_layout.addWidget(cb, row, inx % 2)
 
-            if inx % 3 == 2:
+            if inx % 2 == 1:
                 row += 1
 
         opts_group.setLayout(opts_layout)
@@ -110,6 +112,7 @@ class MainWindow(QWidget):
         parsed_tree = parse_sql(query_text)
         for opt in optimizators:
             parsed_tree = opt.run(parsed_tree)
+            print_parse_tree(parsed_tree)
         translated_tree = executor.translate_tree(parsed_tree)
         # except:
         #     print sys.exc_info()
