@@ -581,11 +581,35 @@ class GreedyOptimizator(CostBasedOptimizator):
                 newNode = algebra.NaturalJoin(newNode)
                 newRName = self.relationTobeJoin[0] + ' ' + self.relationTobeJoin[1]
                 if self.relationTobeJoin[0].find(' ') == -1:
-                    algebra.Relation(newNode, self.relationTobeJoin[0])
+                    #algebra.Relation(newNode, self.relationTobeJoin[0])
+                    thisNode = None
+                    thisNode = algebra.Relation(newNode, self.relationTobeJoin[0])
+                    ###########################################################    Add selection node
+                    if self.relationTobeJoin[0] in self.statforS:
+                        for e in self.statforS[self.relationTobeJoin[0]]:
+                            seleAttr = e[0]
+                            for eCond in self.forSelec:
+                                if eCond.x.namespace == self.relationTobeJoin[0] and eCond.x.name == seleAttr:
+                                    tNode = algebra.Selection(newNode, [eCond])
+                                    thisNode.parent = tNode
+                                    thisNode = tNode
+                    ########################################################### 
                     self.subTrees[self.relationTobeJoin[1]].parent = newNode
                     del self.subTrees[self.relationTobeJoin[1]]
                 elif self.relationTobeJoin[1].find(' ') == -1:
-                    Relation(newNode, self.relationTobeJoin[1])
+                    #algebra.Relation(newNode, self.relationTobeJoin[1])
+                    thisNode = None
+                    thisNode = algebra.Relation(newNode, self.relationTobeJoin[1])
+                    ###########################################################    Add selection node
+                    if self.relationTobeJoin[1] in self.statforS:
+                        for e in self.statforS[self.relationTobeJoin[0]]:
+                            seleAttr = e[0]
+                            for eCond in self.forSelec:
+                                if eCond.x.namespace == self.relationTobeJoin[1] and eCond.x.name == seleAttr:
+                                    tNode = algebra.Selection(newNode, [eCond])
+                                    thisNode.parent = tNode
+                                    thisNode = tNode
+                    ########################################################### 
                     self.subTrees[self.relationTobeJoin[0]].parent = newNode
                     del self.subTrees[self.relationTobeJoin[0]]
                 else:

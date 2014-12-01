@@ -227,19 +227,25 @@ class EnumerationBasedOptimizatorTestCase(unittest.TestCase):
 
 class GreedyOptimizatorTestCase(unittest.TestCase):
     def test_easy(self):
-        tree = parse_sql("SELECT title, a FROM StarsIn, Movies, MovieStars, Hello WHERE \
-            Hello.MovieYear = MovieStars.MovieYear AND Hello.StarName = MovieStars.StarName AND \
-            StarsIn.MovieName = Movies.MovieName AND \
-            MovieStars.StarName = StarsIn.StarName AND MovieStars.MovieYear = Movies.MovieYear AND \
-            Movies.MovieYear = 2008 AND Movies.MovieName = 'King Kong'")
+        #tree = parse_sql("SELECT title, a FROM StarsIn, Movies, MovieStars, Hello WHERE \
+        #    Hello.MovieYear = MovieStars.MovieYear AND Hello.StarName = MovieStars.StarName AND \
+        #    StarsIn.MovieName = Movies.MovieName AND \
+        #    MovieStars.StarName = StarsIn.StarName AND MovieStars.MovieYear = Movies.MovieYear AND \
+        #    Movies.MovieYear = 2008 AND Movies.MovieName = 'King Kong'")
+        tree = parse_sql("SELECT Students.StudentName, Students.StudentId \
+            FROM Students, Grades, Sessions, Programs \
+            WHERE Grades.StudentId = Students.StudentId AND Grades.SessionId = Sessions.SessionId AND Sessions.year = 2014 AND Grades.grade = 'A' AND Programs.ProgramId = Students.ProgramId AND Programs.ProgramName = 'Computer Science'")
 
         print_parse_tree(tree)
 
         test_stats = {
-            'StarsIn': [100, {'MovieName': 25, 'StarName': 10}],
-            'Movies': [150, {'MovieName': 50, 'MovieYear': 15}],
-            'MovieStars': [200, {'StarName': 20, 'MovieYear': 20}],
-            'Hello': [50, {'StarName': 30, 'MovieYear': 25}]
+            'Colleges': [6, {'CollegeId': 6, 'CollegeName': 6}],
+            'Courses': [100, {'CourseId': 100, 'CourseName': 91, 'CollegeId': 6}],
+            'Grades': [1812, {'GradeId': 1812, 'SessionId': 250, 'StudentId': 900, 'grade': 5}],
+            'Professors': [250, {'ProfessorId': 250, 'ProfessorName': 250, 'CollegeId': 6}],
+            'Programs': [34, {'ProgramId': 34, 'ProgramName': 34, 'CollegeId': 6}],
+            'Sessions': [250, {'SessionId': 250, 'year': 5, 'place': 7, 'ProfessorId': 150, 'CourseId': 92}],
+            'Students': [900, {'StudentId': 900, 'StudentName': 900, 'StudentGender': 2, 'StudentDegree': 3, 'ProgramId': 34}]
         }
 
         push_opt = PushSelectionDownOptimizator()
