@@ -6,13 +6,21 @@ Behaviors:
     Process the query and output result
 
 Test cases:
-    SELECT * FROM Students WHERE Students.StudentGender = 'M' AND Students.StudentDegree = 'MS'
-    SELECT Students.StudentName, Students.StudentId FROM Students, Grades, Sessions WHERE Grades.StudentId = Students.StudentId AND Grades.SessionId = Sessions.SessionId AND Sessions.year = 2014 AND Grades.grade = 'A'
+    1. Native v.s. Push selections down & CrossToJoin
+        SELECT Professors.ProfessorName FROM Professors, Sessions, Colleges WHERE Colleges.CollegeId = Professors.CollegeId AND Sessions.ProfessorId = Professors.ProfessorId AND Sessions.year = 2013 AND 
+    
+    2. Selectivity (Push Selections Down v.s. Enumeration or Greedy optimization)
+        SELECT * FROM Students WHERE Students.StudentGender = 'M' AND Students.StudentDegree = 'MS' AND Students.StudentName = 'Sydell Hamill'
+
+    3. Join Order (Push Selections down + CrossToJoin v.s. Enumeration and Greedy)
+    4. Enumerated-based v.s. Greedy (to show that enumeration is slow)
+        SELECT Students.StudentName, Students.StudentId FROM Students, Grades, Sessions, Programs WHERE Grades.StudentId = Students.StudentId AND Grades.SessionId = Sessions.SessionId AND Sessions.year = 2014 AND Grades.grade = 'A' AND Programs.ProgramId = Students.ProgramId AND Programs.ProgramName = 'Computer Science'
 
 """
 
 import sys
 import importlib
+import timeit
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -107,6 +115,8 @@ class MainWindow(QWidget):
         executor = Executor(self.schema)
         optimizators = [instantiate_optimizator(v[1][1]) for v in self._opts if v[0]]
 
+        start_at = timeit.default_timer()
+
         # parsing, optimizing and executing
         # try:
         parsed_tree = parse_sql(query_text)
@@ -121,13 +131,14 @@ class MainWindow(QWidget):
         #     return
 
         result = executor.execute_plan(translated_tree)
+        end_at = timeit.default_timer()
 
         # show table_view for result, treeview for final tree, dialog for execution time
-        rw = ResultWindow(self, translated_tree, result)
+        rw = ResultWindow(self, translated_tree, result, end_at - start_at)
         rw.show()
 
 class ResultWindow(QWidget):
-    def __init__(self, parent, tree, tuples):
+    def __init__(self, parent, tree, tuples, total_time):
         super(ResultWindow, self).__init__(parent, Qt.Window)
         self.setMinimumWidth(600)
 
@@ -144,6 +155,10 @@ class ResultWindow(QWidget):
         table_view = QTableView(self)
         table_view.setModel(self.table_model)
         layout.addWidget(table_view)
+
+        total_time_label = QLabel(self)
+        total_time_label.setText("%.2f ms" % (total_time * 1000.0))
+        layout.addWidget(total_time_label)
 
         self.setLayout(layout)
 
