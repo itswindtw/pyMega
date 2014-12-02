@@ -160,8 +160,8 @@ def enumerate_join_orders(root):
         participants = set(extract_join_order(node))
         # return build_two_pair([1,2])
         return enumerate_pairs(participants)
-    left_deep_trees = tree_traverse_first(root, algebra.NaturalJoin, enumerate_join_order_left_deep)
-    bushy_trees = tree_traverse_first(root, algebra.NaturalJoin, enumerate_join_order_bushy)
+    left_deep_trees = tree_traverse_first(root, algebra.NaturalJoin, enumerate_join_order_left_deep) or []
+    bushy_trees = tree_traverse_first(root, algebra.NaturalJoin, enumerate_join_order_bushy) or []
 
     combined = left_deep_trees + bushy_trees
     return combined or [root]

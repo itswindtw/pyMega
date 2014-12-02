@@ -174,6 +174,25 @@ class GreedyJoinOrderOptimizatorTestCase(unittest.TestCase):
         print_parse_tree(greedy_opt.run(tree))
 
 class EnumerationBasedOptimizatorTestCase(unittest.TestCase):
+    def test_single(self):
+        tree = parse_sql("SELECT * FROM A WHERE A.a = 3")
+
+        test_stats = {
+            'A': [100, {'a': 100}]
+        }
+        
+        push_opt = PushSelectionDownOptimizator()
+        join_opt = CartesianProductToThetaJoinOptimizator(test_stats)
+
+        tree = push_opt.run(tree)
+        # print_parse_tree(tree)
+        tree = join_opt.run(tree)
+        # print_parse_tree(tree)
+
+        print "JoinOrderEnumeration: "
+        greedy_opt = EnumerationBasedOptimizator(test_stats)
+        print_parse_tree(greedy_opt.run(tree))
+
     def test_easy(self):
         tree = parse_sql("SELECT * FROM R, S, T, U WHERE \
             R.b = S.b AND S.c = T.c AND T.d = U.d AND U.a = R.a")
