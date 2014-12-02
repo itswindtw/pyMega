@@ -612,15 +612,16 @@ class GreedyOptimizator(CostBasedOptimizator):
                                     thisNode.parent = tNode
                                     thisNode = tNode
                     ########################################################### 
-                    self.subTrees[self.relationTobeJoin[1]].parent = newNode
-                    del self.subTrees[self.relationTobeJoin[1]]
-                elif self.relationTobeJoin[1].find(' ') == -1:
+                    if not len(self.subTrees) == 0:
+                        self.subTrees[self.relationTobeJoin[1]].parent = newNode
+                        del self.subTrees[self.relationTobeJoin[1]]
+                if self.relationTobeJoin[1].find(' ') == -1:
                     #algebra.Relation(newNode, self.relationTobeJoin[1])
                     thisNode = None
                     thisNode = algebra.Relation(newNode, self.relationTobeJoin[1])
                     ###########################################################    Add selection node
                     if self.relationTobeJoin[1] in self.statforS:
-                        for e in self.statforS[self.relationTobeJoin[0]]:
+                        for e in self.statforS[self.relationTobeJoin[1]]:
                             seleAttr = e[0]
                             for eCond in self.forSelec:
                                 if eCond.x.namespace == self.relationTobeJoin[1] and eCond.x.name == seleAttr:
@@ -628,9 +629,10 @@ class GreedyOptimizator(CostBasedOptimizator):
                                     thisNode.parent = tNode
                                     thisNode = tNode
                     ########################################################### 
-                    self.subTrees[self.relationTobeJoin[0]].parent = newNode
-                    del self.subTrees[self.relationTobeJoin[0]]
-                else:
+                    if not len(self.subTrees) == 0:
+                        self.subTrees[self.relationTobeJoin[0]].parent = newNode
+                        del self.subTrees[self.relationTobeJoin[0]]
+                if not self.relationTobeJoin[0].find(' ') == -1 and not self.relationTobeJoin[1].find(' ') == -1:
                     self.subTrees[self.relationTobeJoin[0]].parent = newNode
                     self.subTrees[self.relationTobeJoin[1]].parent = newNode
                     del self.subTrees[self.relationTobeJoin[0]]
@@ -739,11 +741,30 @@ class GreedyOptimizator(CostBasedOptimizator):
             self.relationTobeJoin.remove(tmp1[0][0])
             self.relationTobeJoin.remove(tmp1[0][1])
             # for the new relationTobeJoin and new statistic for join, continue to do JoinOrder()
-
             newNode = JoinOrder()
             return newNode
+        
+        def treeBuild():
+            newTree = None
+            if len(self.relationTobeJoin) == 1:    # no relation to perform join
+                assert(len(self.statforS) <= 1)
+                rName = self.statforS.keys()[0]
+                newTree = algebra.Relation(newTree, rName)
+                for e in self.statforS[rName]:
+                    seleAttr = e[0]
+                    for eCond in self.forSelec:
+                        if eCond.x.namespace == rName and eCond.x.name == seleAttr:
+                            tNode = None
+                            tNode = algebra.Selection(tNode, [eCond])
+                            newTree.parent = tNode
+                            newTree = tNode
+                return newTree
+            else:
+                newTree = JoinOrder()
+                return newTree
 
-        newTree = JoinOrder()
+
+        newTree = treeBuild()
 
         def AddProject(newTree):
             newRoot = algebra.Projection(None, self.projFields)
