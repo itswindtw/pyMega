@@ -7,7 +7,7 @@ Behaviors:
 
 Test cases:
     1. Native v.s. Push selections down & CrossToJoin
-        SELECT Professors.ProfessorName FROM Professors, Sessions, Colleges WHERE Colleges.CollegeId = Professors.CollegeId AND Sessions.ProfessorId = Professors.ProfessorId AND Sessions.year = 2013 AND 
+        SELECT Professors.ProfessorName FROM Professors, Sessions, Colleges WHERE Colleges.CollegeId = Professors.CollegeId AND Sessions.ProfessorId = Professors.ProfessorId AND Sessions.year = 2013 AND Colleges.CollegeName = 'College of Computing'
     
     2. Selectivity (Push Selections Down v.s. Enumeration or Greedy optimization)
         SELECT * FROM Students WHERE Students.StudentGender = 'M' AND Students.StudentDegree = 'MS' AND Students.StudentName = 'Sydell Hamill'
