@@ -307,3 +307,10 @@ class HelperTestCase(unittest.TestCase):
         self.assertIsNot(new_join, join)
         self.assertIsNot(new_join.parent, join.parent)
 
+    def test_convert_cascading_selections(self):
+        tree = parse_sql("SELECT * FROM R WHERE R.a = 1")
+        print_parse_tree(tree)
+
+        convert_cascading_selections(tree)
+        print_parse_tree(tree)
+        

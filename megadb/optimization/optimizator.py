@@ -31,6 +31,23 @@ def tree_traverse_first(root, type, visit):
         if result:
             return result
 
+def convert_cascading_selections(root):
+    def visit_selection(node):
+        if len(node.conds) == 1:
+          return
+        
+        root = node.parent
+        for c in node.conds:
+            new_node = algebra.Selection(root, [c])
+            root = new_node
+
+        for c in node.children:
+            c.parent = root
+
+        node.parent = None
+
+    tree_traverse(root, algebra.Selection, visit_selection)
+
 def collect_namespaces(node):
     if isinstance(node, algebra.Relation):
         return set([str(node.name)])
