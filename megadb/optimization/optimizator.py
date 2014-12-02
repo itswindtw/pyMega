@@ -295,6 +295,7 @@ class PushSelectionDownOptimizator(BaseOptimizator):
                 selection.parent = None
 
         tree_traverse(root, algebra.Selection, visit_selection)
+        #convert_cascading_selections(root)
         return root
 
 

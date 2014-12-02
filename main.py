@@ -130,6 +130,9 @@ class MainWindow(QWidget):
         #     self.refresh_interface()
         #     return
 
+        # eliminate huge selection nodes
+        optimizator.convert_cascading_selections(translated_tree)
+  
         result = executor.execute_plan(translated_tree)
         end_at = timeit.default_timer()
 

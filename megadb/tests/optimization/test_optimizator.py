@@ -175,10 +175,10 @@ class GreedyJoinOrderOptimizatorTestCase(unittest.TestCase):
 
 class EnumerationBasedOptimizatorTestCase(unittest.TestCase):
     def test_single(self):
-        tree = parse_sql("SELECT * FROM A WHERE A.a = 3")
+        tree = parse_sql("SELECT * FROM A WHERE A.a = 3 AND A.b = 2 AND A.c = 3")
 
         test_stats = {
-            'A': [100, {'a': 100}]
+            'A': [100, {'a': 100, 'b': 50, 'c': 3}]
         }
         
         push_opt = PushSelectionDownOptimizator()
