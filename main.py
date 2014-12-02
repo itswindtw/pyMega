@@ -10,7 +10,7 @@ Test cases:
         SELECT Professors.ProfessorName FROM Professors, Sessions, Colleges WHERE Colleges.CollegeId = Professors.CollegeId AND Sessions.ProfessorId = Professors.ProfessorId AND Sessions.year = 2013 AND Colleges.CollegeName = 'College of Computing'
     
     2. Selectivity (Push Selections Down v.s. Enumeration or Greedy optimization)
-        SELECT * FROM Students WHERE Students.StudentGender = 'M' AND Students.StudentDegree = 'MS' AND Students.StudentName = 'Sydell Hamill'
+        SELECT * FROM Students WHERE Students.StudentName = 'Sydell Hamill' AND Students.StudentDegree = 'MS' AND Students.StudentGender = 'M'
 
     3. Join Order (Push Selections down + CrossToJoin v.s. Enumeration and Greedy)
     4. Enumerated-based v.s. Greedy (to show that enumeration is slow)
